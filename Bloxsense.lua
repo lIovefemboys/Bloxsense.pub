@@ -9,6 +9,7 @@ end
 
 local library = {
 	design = getgenv().design == "kali" and "kali",
+	libColor = Color3.fromRGB(100, 60, 80),
 	tabs = {},
 	draggable = true,
 	flags = {},
