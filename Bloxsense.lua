@@ -2860,4 +2860,14 @@ function library:Init()
 	end
 end
 
+spawn(function()
+    wait(0.5)
+    library.flags["Menu Accent Color"] = Color3.fromRGB(255, 50, 100)
+    for _, obj in pairs(library.theme) do
+        pcall(function()
+            obj.BackgroundColor3 = library.flags["Menu Accent Color"]
+        end)
+    end
+end)
+
 return library
