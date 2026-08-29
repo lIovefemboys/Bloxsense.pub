@@ -7,7 +7,25 @@ if getgenv().library then
 	getgenv().library:Unload()
 end
 
-local library = {design = getgenv().design == "kali" and "kali", tabs = {}, draggable = true, flags = {}, title = "awakenkn-hub", open = false, mousestate = inputService.MouseIconEnabled,popup = nil, instances = {}, connections = {}, options = {}, notifications = {}, tabSize = 0, theme = {}, foldername = "awakenkn-hubv3", fileext = ".json"}
+local library = {
+	design = getgenv().design == "kali" and "kali",
+	tabs = {},
+	draggable = true,
+	flags = {},
+	title = "awakenkn-hub",
+	open = false,
+	mousestate = inputService.MouseIconEnabled,
+	popup = nil,
+	instances = {},
+	connections = {},
+	options = {},
+	notifications = {},
+	tabSize = 0,
+	theme = {},
+	foldername = "awakenkn-hubv3",
+	fileext = ".json"
+}
+
 if getgenv().scripttitle then
     library.title = getgenv().scripttitle
 end
@@ -142,11 +160,6 @@ function library:LoadConfig(config)
                 end
             end
         end
-    end
-
-    -- Обновляем глобальные флаги
-    for flag, val in pairs(data) do
-        library.flags[flag] = val
     end
 end
 
