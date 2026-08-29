@@ -9,7 +9,6 @@ end
 
 local library = {
 	design = getgenv().design == "kali" and "kali",
-	libColor = Color3.fromRGB(100, 60, 80),
 	tabs = {},
 	draggable = true,
 	flags = {},
@@ -436,7 +435,7 @@ library.createToggle = function(option, parent)
 			Size = UDim2.new(1, -6, 1, -6),
 			BackgroundTransparency = 1,
 			Image = "rbxassetid://3570695787",
-			ImageColor3 = library.flags["Menu Accent Color"],
+			ImageColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
 			Visible = option.state,
 			Parent = tickbox
 		})
@@ -456,7 +455,7 @@ library.createToggle = function(option, parent)
 		tickbox = library:Create("Frame", {
 			Position = UDim2.new(0, 6, 0, 4),
 			Size = UDim2.new(0, 12, 0, 12),
-			BackgroundColor3 = library.flags["Menu Accent Color"],
+			BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
 			BorderColor3 = Color3.new(),
 			Parent = option.main
 		})
@@ -826,7 +825,7 @@ library.createSlider = function(option, parent)
 	})
 
 	option.fill = library:Create("Frame", {
-		BackgroundColor3 = library.flags["Menu Accent Color"],
+		BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
 		BorderSizePixel = 0,
 		Parent = option.slider
 	})
@@ -1213,7 +1212,7 @@ library.createList = function(option, parent)
 			Text = " " ..value,
 			TextSize = 15,
 			Font = Enum.Font.Code,
-			TextColor3 = library.flags["Menu Accent Color"],
+			TextColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Visible = self.multiselect and self.value[value] or self.value == value,
 			Parent = label
@@ -2306,7 +2305,7 @@ function library:AddTab(title, pos)
 
 				table.insert(library.theme, library:Create("Frame", {
 					Size = UDim2.new(1, 0, 0, 1),
-					BackgroundColor3 = library.flags["Menu Accent Color"],
+					BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
 					BorderSizePixel = 0,
 					BorderMode = Enum.BorderMode.Inset,
 					Parent = self.main
@@ -2680,7 +2679,7 @@ function library:Init()
 	table.insert(library.theme, self:Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 1),
 		Position = UDim2.new(0, 0, 0, 24),
-		BackgroundColor3 = library.flags["Menu Accent Color"],
+		BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
 		BorderSizePixel = 0,
 		Parent = self.main
 	}))
@@ -2695,7 +2694,7 @@ function library:Init()
 	})
 
 	self.tabHighlight = self:Create("Frame", {
-		BackgroundColor3 = library.flags["Menu Accent Color"],
+		BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
 		BorderSizePixel = 0,
 		Parent = self.main
 	})
@@ -2860,15 +2859,5 @@ function library:Init()
 		delay(1, function() self:Close() end)
 	end
 end
-
-spawn(function()
-    wait(0.5)
-    library.flags["Menu Accent Color"] = Color3.fromRGB(255, 50, 100)
-    for _, obj in pairs(library.theme) do
-        pcall(function()
-            obj.BackgroundColor3 = library.flags["Menu Accent Color"]
-        end)
-    end
-end)
 
 return library
