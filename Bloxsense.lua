@@ -12,7 +12,7 @@ local library = {
 	tabs = {},
 	draggable = true,
 	flags = {},
-	title = "awakenkn-hub",
+	title = "",
 	open = false,
 	mousestate = inputService.MouseIconEnabled,
 	popup = nil,
@@ -22,7 +22,7 @@ local library = {
 	notifications = {},
 	tabSize = 0,
 	theme = {},
-	foldername = "awakenkn-hubv3",
+	foldername = "",
 	fileext = ".json"
 }
 
