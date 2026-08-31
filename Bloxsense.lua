@@ -2624,6 +2624,16 @@ function library:Init()
 		self.base.Parent = game:GetService"CoreGui"
 	end
 
+	library.flags["Menu Accent Color"] = Color3.fromRGB(0, 68, 255)
+    -- Обновить все элементы
+    for _, obj in pairs(library.theme) do
+        if obj:IsA("Frame") then
+            obj.BackgroundColor3 = library.flags["Menu Accent Color"]
+        elseif obj:IsA("ImageLabel") then
+            obj.ImageColor3 = library.flags["Menu Accent Color"]
+        end
+    end
+
 	self.main = self:Create("ImageButton", {
 		AutoButtonColor = false,
 		Position = UDim2.new(0, 100, 0, 46),
@@ -2837,15 +2847,6 @@ function library:Init()
 	if not getgenv().silent then
 		delay(1, function() self:Close() end)
 	end
-end
-
-library.flags["Menu Accent Color"] = Color3.fromRGB(0, 68, 255)
-for _, obj in pairs(library.theme) do
-    if obj:IsA("Frame") then
-        obj.BackgroundColor3 = library.flags["Menu Accent Color"]
-    elseif obj:IsA("ImageLabel") then
-        obj.ImageColor3 = library.flags["Menu Accent Color"]
-    end
 end
 
 return library
