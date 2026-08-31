@@ -7,32 +7,13 @@ if getgenv().library then
 	getgenv().library:Unload()
 end
 
-local library = {
-	design = getgenv().design == "kali" and "kali",
-	tabs = {},
-	draggable = true,
-	flags = {},
-	title = "",
-	open = false,
-	mousestate = inputService.MouseIconEnabled,
-	popup = nil,
-	instances = {},
-	connections = {},
-	options = {},
-	notifications = {},
-	tabSize = 0,
-	theme = {},
-	foldername = "",
-	fileext = ".json"
-}
-
+local library = {design = getgenv().design == "kali" and "kali", tabs = {}, draggable = true, flags = {}, title = "", open = false, mousestate = inputService.MouseIconEnabled,popup = nil, instances = {}, connections = {}, options = {}, notifications = {}, tabSize = 0, theme = {}, foldername = "", fileext = ".json"}
 if getgenv().scripttitle then
     library.title = getgenv().scripttitle
 end
 if getgenv().FolderName then
     library.foldername = getgenv().FolderName
 end
-
 getgenv().library = library
 
 local dragging, dragInput, dragStart, startPos, dragObject
@@ -435,7 +416,7 @@ library.createToggle = function(option, parent)
 			Size = UDim2.new(1, -6, 1, -6),
 			BackgroundTransparency = 1,
 			Image = "rbxassetid://3570695787",
-			ImageColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
+			ImageColor3 = library.flags["Menu Accent Color"],
 			Visible = option.state,
 			Parent = tickbox
 		})
@@ -455,7 +436,7 @@ library.createToggle = function(option, parent)
 		tickbox = library:Create("Frame", {
 			Position = UDim2.new(0, 6, 0, 4),
 			Size = UDim2.new(0, 12, 0, 12),
-			BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
+			BackgroundColor3 = library.flags["Menu Accent Color"],
 			BorderColor3 = Color3.new(),
 			Parent = option.main
 		})
@@ -825,7 +806,7 @@ library.createSlider = function(option, parent)
 	})
 
 	option.fill = library:Create("Frame", {
-		BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
+		BackgroundColor3 = library.flags["Menu Accent Color"],
 		BorderSizePixel = 0,
 		Parent = option.slider
 	})
@@ -1212,7 +1193,7 @@ library.createList = function(option, parent)
 			Text = " " ..value,
 			TextSize = 15,
 			Font = Enum.Font.Code,
-			TextColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
+			TextColor3 = library.flags["Menu Accent Color"],
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Visible = self.multiselect and self.value[value] or self.value == value,
 			Parent = label
@@ -2305,7 +2286,7 @@ function library:AddTab(title, pos)
 
 				table.insert(library.theme, library:Create("Frame", {
 					Size = UDim2.new(1, 0, 0, 1),
-					BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
+					BackgroundColor3 = library.flags["Menu Accent Color"],
 					BorderSizePixel = 0,
 					BorderMode = Enum.BorderMode.Inset,
 					Parent = self.main
@@ -2643,7 +2624,15 @@ function library:Init()
 		self.base.Parent = game:GetService"CoreGui"
 	end
 
-    library.flags["Menu Accent Color"] = Color3.fromRGB(255, 50, 100)
+	library.flags["Menu Accent Color"] = Color3.fromRGB(0, 68, 255)
+    -- Обновить все элементы
+    for _, obj in pairs(library.theme) do
+        if obj:IsA("Frame") then
+            obj.BackgroundColor3 = library.flags["Menu Accent Color"]
+        elseif obj:IsA("ImageLabel") then
+            obj.ImageColor3 = library.flags["Menu Accent Color"]
+        end
+    end
 
 	self.main = self:Create("ImageButton", {
 		AutoButtonColor = false,
@@ -2670,7 +2659,7 @@ function library:Init()
 		BackgroundTransparency = 1,
 		Text = tostring(self.title),
 		Font = Enum.Font.Code,
-		TextSize = 16,
+		TextSize = 18,
 		TextColor3 = Color3.new(1, 1, 1),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = self.main
@@ -2679,7 +2668,7 @@ function library:Init()
 	table.insert(library.theme, self:Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 1),
 		Position = UDim2.new(0, 0, 0, 24),
-		BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
+		BackgroundColor3 = library.flags["Menu Accent Color"],
 		BorderSizePixel = 0,
 		Parent = self.main
 	}))
@@ -2694,7 +2683,7 @@ function library:Init()
 	})
 
 	self.tabHighlight = self:Create("Frame", {
-		BackgroundColor3 = library.flags["Menu Accent Color"] = Color3.fromRGB(0, 77, 255),
+		BackgroundColor3 = library.flags["Menu Accent Color"],
 		BorderSizePixel = 0,
 		Parent = self.main
 	})
