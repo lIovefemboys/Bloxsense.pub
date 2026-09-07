@@ -70,24 +70,30 @@ function library:AddConnection(connection, name, callback)
 end
 
 function library:Unload()
-	inputService.MouseIconEnabled = self.mousestate
-	for _, c in next, self.connections do
-		c:Disconnect()
-	end
-	for _, i in next, self.instances do
-		if i.method then
-			pcall(function() i.object:Remove() end)
-		else
-			i.object:Destroy()
-		end
-	end
-	for _, o in next, self.options do
-		if o.type == "toggle" then
-			coroutine.resume(coroutine.create(o.SetState, o))
-		end
-	end
-	library = nil
-	getgenv().library = nil
+    inputService.MouseIconEnabled = self.mousestate
+    for _, o in next, self.options do
+        if o.type == "toggle" then
+            local fn = o.SetState
+            if type(fn) == "function" then
+                coroutine.resume(coroutine.create(fn), o)
+            end
+        end
+    end
+
+    for _, c in next, self.connections do
+        c:Disconnect()
+    end
+
+    for _, i in next, self.instances do
+        if i.method then
+            pcall(function() i.object:Remove() end)
+        else
+            i.object:Destroy()
+        end
+    end
+
+    library = nil
+    getgenv().library = nil
 end
 
 function library:LoadConfig(config)
