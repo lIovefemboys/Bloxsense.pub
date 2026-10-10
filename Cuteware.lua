@@ -4849,6 +4849,14 @@ local Library; do
 
                 ThemeHolder:UpdateThemingList()
             end 
+
+            local UnloadSection = Settings:AddSection({Title = "Unload", Side = 2})
+            UnloadSection:AddButton({Text = "Unload", Confirmation = true, Callback = function()
+                if getgenv().SensoryESP_Unload then
+                    pcall(getgenv().SensoryESP_Unload)
+                end
+                Library:Unload()
+            end})
         end
     end 
 
