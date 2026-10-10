@@ -4602,19 +4602,14 @@ local Library; do
                     return 
                 end 
 
-                -- local Parts = {}
-                -- for _, Part in Model:GetChildren() do
-                --     if Part:IsA("BasePart") and Part.Name ~= "HumanoidRootPart" then
-                --         table.insert(Parts, Part)
-                --     end
-                -- end
+                 local Parts = {}
+                 for _, Part in Model:GetChildren() do
+                   if Part:IsA("BasePart") and Part.Name ~= "HumanoidRootPart" then
+                         table.insert(Parts, Part)
+                     end
+                 end
 
-                local Root = Model:FindFirstChild("HumanoidRootPart") or Model.PrimaryPart
-                if not Root then
-                    return
-                end
-
-                local Size, Position, OnScreen, Distance = Cfg:BoxSolve(Root)
+                local Size, Position, OnScreen, Distance = Cfg:BoxSolve(Model.HumanoidRootPart)
 
                 local Holder = Items.Main.Instance
                 Holder.Visible = true
