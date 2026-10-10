@@ -4609,7 +4609,12 @@ local Library; do
                 --     end
                 -- end
 
-                local Size, Position, OnScreen, Distance = Cfg:BoxSolve(Model.HumanoidRootPart)
+                local Root = Model:FindFirstChild("HumanoidRootPart") or Model.PrimaryPart
+                if not Root then
+                    return
+                end
+
+                local Size, Position, OnScreen, Distance = Cfg:BoxSolve(Root)
 
                 local Holder = Items.Main.Instance
                 Holder.Visible = true
