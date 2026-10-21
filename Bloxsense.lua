@@ -1061,7 +1061,7 @@ library.createList = function(option, parent)
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarImageColor3 = Color3.new(),
-		ScrollBarThickness = 3,
+		ScrollBarThickness = 4,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 		VerticalScrollBarInset = Enum.ScrollBarInset.Always,
 		TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
@@ -1105,24 +1105,50 @@ library.createList = function(option, parent)
 
 	local valueCount = 0
 	layout.Changed:connect(function()
-		option.holder.Size = UDim2.new(0, option.listvalue.AbsoluteSize.X, 0, 8 + (valueCount > option.max and (-2 + (option.max * 22)) or layout.AbsoluteContentSize.Y))
-		option.content.CanvasSize = UDim2.new(0, 0, 0, 8 + layout.AbsoluteContentSize.Y)
+		local contentHeight = layout.AbsoluteContentSize.Y
+		local maxRows = option.max or 4
+		local rowHeight = 22
+		local calcHeight = 8 + (contentHeight > (maxRows * rowHeight) and (-2 + (maxRows * rowHeight)) or contentHeight)
+		option.holder.Size = UDim2.new(0, option.listvalue.AbsoluteSize.X > 0 and option.listvalue.AbsoluteSize.X or 200, 0, calcHeight)
+		option.content.CanvasSize = UDim2.new(0, 0, 0, 8 + contentHeight)
 	end)
+
 	local interest = option.sub and option.listvalue or option.main
+
+	local isOpen = false
+
+	function option:Open()
+		if isOpen then return end
+		if library.popup and library.popup ~= option then
+			library.popup:Close()
+		end
+		isOpen = true
+		option.open = true
+		option.holder.Visible = true
+		local listBottom = option.listvalue.AbsolutePosition.Y + option.listvalue.AbsoluteSize.Y
+		option.holder.Position = UDim2.new(0, option.listvalue.AbsolutePosition.X, 0, listBottom)
+		library.popup = option
+		option.listvalue.BorderColor3 = library.flags["Menu Accent Color"]
+		tweenService:Create(option.arrow, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = -90}):Play()
+	end
+
+	function option:Close()
+		if not isOpen then return end
+		isOpen = false
+		option.open = false
+		option.holder.Visible = false
+		option.listvalue.BorderColor3 = Color3.new()
+		library.popup = nil
+		tweenService:Create(option.arrow, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = 90}):Play()
+	end
 
 	option.listvalue.InputBegan:connect(function(input)
 		if input.UserInputType.Name == "MouseButton1" then
-			if library.popup == option then library.popup:Close() return end
-			if library.popup then
-				library.popup:Close()
+			if isOpen then
+				option:Close()
+			else
+				option:Open()
 			end
-			option.arrow.Rotation = -90
-			option.open = true
-			option.holder.Visible = true
-			local pos = option.main.AbsolutePosition
-			option.holder.Position = UDim2.new(0, pos.X + 6, 0, pos.Y + ((option.text == "nil" and not option.sub) and 66 or 84))
-			library.popup = option
-			option.listvalue.BorderColor3 = library.flags["Menu Accent Color"]
 		end
 		if input.UserInputType.Name == "MouseMovement" then
 			if not library.warning and not library.slider then
@@ -1133,7 +1159,7 @@ library.createList = function(option, parent)
 
 	option.listvalue.InputEnded:connect(function(input)
 		if input.UserInputType.Name == "MouseMovement" then
-			if not option.open then
+			if not isOpen then
 				option.listvalue.BorderColor3 = Color3.new()
 			end
 		end
@@ -1168,7 +1194,7 @@ library.createList = function(option, parent)
 		valueCount = valueCount + 1
 
 		if self.multiselect then
-            self.value[value] = state
+			self.value[value] = state
 			if not table.find(self.values, value) then
 				table.insert(self.values, value)
 			end
@@ -1193,19 +1219,25 @@ library.createList = function(option, parent)
 		self.labels[value] = label
 
 		local labelOverlay = library:Create("TextLabel", {
-			ZIndex = 4,	
+			ZIndex = 4,
 			Size = UDim2.new(1, 0, 1, 0),
 			BackgroundTransparency = 0.8,
-			Text = " " ..value,
+			BackgroundColor3 = library.flags["Menu Accent Color"],
+			Text = " " .. value,
 			TextSize = 15,
 			Font = Enum.Font.Code,
-			TextColor3 = library.flags["Menu Accent Color"],
+			TextColor3 = Color3.new(1, 1, 1),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Visible = self.multiselect and self.value[value] or self.value == value,
 			Parent = label
 		})
-		selected = selected or self.value == value and labelOverlay
 		table.insert(library.theme, labelOverlay)
+
+		if self.multiselect and self.value == value then
+			selected = labelOverlay
+		elseif not self.multiselect and self.value == value then
+			selected = labelOverlay
+		end
 
 		label.InputBegan:connect(function(input)
 			if input.UserInputType.Name == "MouseButton1" then
@@ -1216,6 +1248,18 @@ library.createList = function(option, parent)
 					self:SetValue(value)
 					self:Close()
 				end
+			end
+		end)
+
+		label.InputChanged:connect(function(input)
+			if input.UserInputType.Name == "MouseMovement" then
+				label.BackgroundTransparency = 0.92
+			end
+		end)
+
+		label.InputEnded:connect(function(input)
+			if input.UserInputType.Name == "MouseMovement" then
+				label.BackgroundTransparency = 1
 			end
 		end)
 	end
@@ -1230,12 +1274,14 @@ library.createList = function(option, parent)
 			label:Destroy()
 			self.labels[value] = nil
 			valueCount = valueCount - 1
+			local idx = table.find(self.values, value)
+			if idx then
+				table.remove(self.values, idx)
+			end
 			if self.multiselect then
 				self.value[value] = nil
-                table.remove(self.values, table.find(self.values, value))
 				self:SetValue(self.value)
 			else
-				table.remove(self.values, table.find(self.values, value))
 				if self.value == value then
 					selected = nil
 					self:SetValue(self.values[1] or "")
@@ -1251,29 +1297,28 @@ library.createList = function(option, parent)
 				value[v] = false
 			end
 		end
-		self.value = typeof(value) == "table" and value or tostring(table.find(self.values, value) and value or self.values[1])
+		self.value = typeof(value) == "table" and value or tostring(table.find(self.values, value) and value or self.values[1] or "")
 		library.flags[self.flag] = self.value
 		option.listvalue.Text = " " .. (self.multiselect and getMultiText() or self.value)
 		if self.multiselect then
 			for name, label in next, self.labels do
+				local overlay = label:FindFirstChildOfClass("TextLabel")
 				label.TextTransparency = self.value[name] and 1 or 0
-				if label:FindFirstChild"TextLabel" then
-					label.TextLabel.Visible = self.value[name]
+				if overlay then
+					overlay.Visible = self.value[name]
 				end
 			end
 		else
 			if selected then
 				selected.TextTransparency = 0
-				if selected:FindFirstChild"TextLabel" then
-					selected.TextLabel.Visible = false
-				end
+				local overlay = selected:FindFirstChildOfClass("TextLabel")
+				if overlay then overlay.Visible = false end
 			end
 			if self.labels[self.value] then
 				selected = self.labels[self.value]
 				selected.TextTransparency = 1
-				if selected:FindFirstChild"TextLabel" then
-					selected.TextLabel.Visible = true
-				end
+				local overlay = selected:FindFirstChildOfClass("TextLabel")
+				if overlay then overlay.Visible = true end
 			end
 		end
 		if not nocallback then
@@ -1285,14 +1330,6 @@ library.createList = function(option, parent)
 			option:SetValue(option.value)
 		end
 	end)
-
-	function option:Close()
-		library.popup = nil
-		option.arrow.Rotation = 90
-		self.open = false
-		option.holder.Visible = false
-		option.listvalue.BorderColor3 = Color3.new()
-	end
 
 	return option
 end
