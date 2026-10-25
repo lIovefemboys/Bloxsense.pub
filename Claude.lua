@@ -3708,7 +3708,7 @@ local Library = {
                 Rotation = 0,
                 AutoRotate = Params.AutoRotate ~= false,
                 RotationSpeed = tonumber(Params.RotationSpeed) or 0.8,
-                UserId = nil,
+                AssetId = nil,
                 LoadGeneration = 0,
                 Dragging = false,
                 Connections = {},
@@ -3836,7 +3836,7 @@ local Library = {
                     return false
                 end
 
-                self.UserId = nil
+                self.AssetId = nil
 
                 local ArchivableStates = SetArchivable(Character, true)
                 local Success, Model = pcall(function()
@@ -3875,9 +3875,9 @@ local Library = {
                 return true
             end
 
-            function Preview:SetUserId(UserId)
-                UserId = tonumber(UserId)
-                if not UserId or UserId <= 0 then
+            function Preview:SetAssetId(AssetId)
+                AssetId = tonumber(AssetId)
+                if not AssetId or AssetId <= 0 then
                     return false
                 end
                 if self.Destroyed then
@@ -3886,31 +3886,60 @@ local Library = {
 
                 self.LoadGeneration += 1
                 local Generation = self.LoadGeneration
-                self.UserId = UserId
+                self.AssetId = AssetId
                 ClearCharacter()
 
                 task.spawn(function()
-                    local Success, Model = pcall(function()
-                        local Description = Players:GetHumanoidDescriptionFromUserId(UserId)
-                        return Players:CreateHumanoidModelFromDescription(Description, Enum.HumanoidRigType.R15)
+                    local Success, Loaded = pcall(function()
+                        return game:GetObjects("rbxassetid://" .. tostring(AssetId))
                     end)
 
                     if self.Destroyed or Generation ~= self.LoadGeneration then
-                        if Success and Model then
-                            Model:Destroy()
+                        if Success and Loaded then
+                            for _, Object in Loaded do
+                                Object:Destroy()
+                            end
                         end
                         return
                     end
 
-                    if not Success or not Model then
-                        warn("ESPPreview failed to load avatar for user " .. tostring(UserId))
+                    if not Success or type(Loaded) ~= "table" or not Loaded[1] then
+                        warn("ESPPreview failed to load Roblox model asset " .. tostring(AssetId) .. "; check that the asset is public and loadable in this environment")
                         return
                     end
 
+                    local Model
+                    for _, Object in Loaded do
+                        if Object:IsA("Model") then
+                            Model = Object
+                            break
+                        end
+                        Model = Object:FindFirstChildWhichIsA("Model", true)
+                        if Model then
+                            break
+                        end
+                    end
+
+                    if not Model then
+                        local Wrapper = Instance.new("Model")
+                        for _, Object in Loaded do
+                            Object.Parent = Wrapper
+                        end
+                        Model = Wrapper
+                    else
+                        for _, Object in Loaded do
+                            if Object ~= Model and not Model:IsDescendantOf(Object) then
+                                Object:Destroy()
+                            end
+                        end
+                    end
+
+                    local HasPart = false
                     for _, Object in Model:GetDescendants() do
                         if Object:IsA("Script") or Object:IsA("LocalScript") then
                             Object:Destroy()
                         elseif Object:IsA("BasePart") then
+                            HasPart = true
                             Object.Anchored = true
                             Object.CanCollide = false
                         elseif Object:IsA("Humanoid") then
@@ -3919,10 +3948,29 @@ local Library = {
                         end
                     end
 
-                    Model.Name = "AvatarPreview_" .. tostring(UserId)
+                    if not HasPart then
+                        for _, Object in Loaded do
+                            if Object.Parent then
+                                Object:Destroy()
+                            end
+                        end
+                        warn("ESPPreview asset " .. tostring(AssetId) .. " contains no model parts")
+                        return
+                    end
+
+                    Model.Name = "AssetPreview_" .. tostring(AssetId)
                     Model.Parent = Items["World"].Instance
 
-                    local Bounds, Size = Model:GetBoundingBox()
+                    local SuccessBounds, Bounds, Size = pcall(function()
+                        local Box, Extents = Model:GetBoundingBox()
+                        return Box, Extents
+                    end)
+                    if not SuccessBounds or not Size then
+                        Model:Destroy()
+                        warn("ESPPreview could not calculate bounds for asset " .. tostring(AssetId))
+                        return
+                    end
+
                     local Pivot = Model:GetPivot()
                     local Offset = CFrame.new(-Bounds.Position.X, Size.Y / 2 - Bounds.Position.Y, -Bounds.Position.Z)
                     Preview.BasePivot = Offset * Pivot
@@ -4020,7 +4068,7 @@ local Library = {
             Bind(LocalPlayer.CharacterAdded, function(Character)
                 task.defer(function()
                     Character:WaitForChild("HumanoidRootPart", 5)
-                    if not Preview.Destroyed and not Preview.UserId and LocalPlayer.Character == Character then
+                    if not Preview.Destroyed and not Preview.AssetId and LocalPlayer.Character == Character then
                         Preview:Refresh(Character)
                     end
                 end)
