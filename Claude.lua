@@ -3715,6 +3715,7 @@ local Library = {
                 TargetModelSize = math.max(tonumber(Params.TargetModelSize) or 5, 0.1),
                 AssetId = nil,
                 ESPDebugPrinted = false,
+                ESPFrameCount = 0,
                 ESP = {
                     Boxes = true,
                     BoxColor = Color3.fromRGB(255, 255, 255),
@@ -3834,6 +3835,18 @@ local Library = {
                 BorderSizePixel = 0,
                 ZIndex = 10
             })
+
+            if Params.Debug then
+                Library:Create("Frame", {
+                    Name = "\\0",
+                    Parent = Items["ESPLayer"].Instance,
+                    BackgroundColor3 = Color3.fromRGB(255, 0, 0),
+                    Size = UDim2.new(0, 60, 0, 60),
+                    Position = UDim2.new(0.5, -30, 0.5, -30),
+                    BorderSizePixel = 0,
+                    ZIndex = 100
+                })
+            end
 
             Items["Box"] = Library:Create("Frame", {
                 Name = "\\0",
@@ -4014,10 +4027,10 @@ local Library = {
             end
 
             local function UpdateESP()
+                Preview.ESPFrameCount = (Preview.ESPFrameCount or 0) + 1
                 if not Preview.CharacterModel or not Preview.CharacterModel.Parent then
-                    if not Preview.ESPDebugPrinted then
-                        warn("ESPPreview: no character model yet")
-                        Preview.ESPDebugPrinted = true
+                    if Preview.ESPFrameCount <= 5 then
+                        warn("ESPPreview: no character model yet (frame", Preview.ESPFrameCount, ")")
                     end
                     for _, Key in {"Box", "BoxFill", "Name", "HealthBarBg", "HealthText", "Distance"} do
                         if Items[Key] then Items[Key].Instance.Visible = false end
@@ -4036,7 +4049,14 @@ local Library = {
 
                 local Center, Size, Box = GetModelCenter()
                 if not Center or not Size then
+                    warn("ESPPreview: no center/size")
                     return
+                end
+                if Preview.ESPFrameCount <= 5 then
+                    warn("ESPPreview: Center=", Center, "Size=", Size)
+                    warn("ESPPreview: Camera CFrame=", Camera.CFrame, "ViewportSize=", Viewport.AbsoluteSize)
+                    local testSp = Camera:WorldToViewportPoint(Center)
+                    warn("ESPPreview: Center viewport point=", testSp)
                 end
 
                 -- 8 corners of bounding box
@@ -4072,9 +4092,8 @@ local Library = {
 
                 local boxW = math.max(maxX - minX, 1)
                 local boxH = math.max(maxY - minY, 1)
-                if not Preview.ESPDebugPrinted then
+                if Preview.ESPFrameCount <= 5 then
                     warn("ESPPreview: model found, box", minX, minY, boxW, boxH, "ESP.Boxes=", Preview.ESP.Boxes)
-                    Preview.ESPDebugPrinted = true
                 end
 
                 -- Box
