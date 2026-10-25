@@ -4047,6 +4047,21 @@ local Library = {
                 local VPAbs = Viewport.AbsolutePosition
                 local VPSize = Viewport.AbsoluteSize
 
+                local function Project(Point)
+                    local Relative = Camera.CFrame:PointToObjectSpace(Point)
+                    if Relative.Z <= 0 then
+                        return 0, 0, false
+                    end
+                    local Fov = math.rad(Camera.FieldOfView)
+                    local HalfTan = math.tan(Fov / 2)
+                    local Aspect = VPSize.X / VPSize.Y
+                    local X = (Relative.X / Relative.Z) / (HalfTan * Aspect)
+                    local Y = (Relative.Y / Relative.Z) / HalfTan
+                    local Px = (X + 1) / 2 * VPSize.X
+                    local Py = (1 - Y) / 2 * VPSize.Y
+                    return Px, Py, true
+                end
+
                 local Center, Size, Box = GetModelCenter()
                 if not Center or not Size then
                     warn("ESPPreview: no center/size")
@@ -4057,8 +4072,9 @@ local Library = {
                     warn("ESPPreview: Camera CFrame=", Camera.CFrame, "ViewportSize=", Viewport.AbsoluteSize)
                     warn("ESPPreview: Viewport.CurrentCamera==Camera?", Viewport.CurrentCamera == Camera)
                     warn("ESPPreview: Camera.ViewportSize=", Camera.ViewportSize)
-                    local testSp = Camera:WorldToViewportPoint(Center)
-                    warn("ESPPreview: Center viewport point=", testSp)
+                    warn("ESPPreview: Viewport.AbsolutePosition=", VPAbs)
+                    local cx, cy, cvis = Project(Center)
+                    warn("ESPPreview: Center projected=", cx, cy, cvis)
                 end
 
                 -- 8 corners of bounding box
@@ -4078,10 +4094,8 @@ local Library = {
                 local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
                 local allVisible = true
                 for _, Corner in corners do
-                    local sp, visible = Camera:WorldToViewportPoint(Corner)
+                    local x, y, visible = Project(Corner)
                     if not visible then allVisible = false end
-                    local x = sp.X
-                    local y = sp.Y
                     if x < minX then minX = x end
                     if y < minY then minY = y end
                     if x > maxX then maxX = x end
@@ -4127,9 +4141,7 @@ local Library = {
                 -- Name
                 if ESP.Names then
                     local headPos = Center + Vector3.new(0, Size.Y / 2, 0)
-                    local sp, visible = Camera:WorldToViewportPoint(headPos)
-                    local x = sp.X
-                    local y = sp.Y
+                    local x, y, visible = Project(headPos)
                     Items["Name"].Instance.Visible = visible
                     Items["Name"].Instance.Position = UDim2.fromOffset(x, y - 4)
                     Items["Name"].Instance.AnchorPoint = Vector2.new(0.5, 1)
@@ -4277,12 +4289,8 @@ local Library = {
                         idx += 1
                         local p0 = Joint.Part0.Position
                         local p1 = Joint.Part1.Position
-                        local sp0, v0 = Camera:WorldToViewportPoint(p0)
-                        local sp1, v1 = Camera:WorldToViewportPoint(p1)
-                        local x0 = sp0.X
-                        local y0 = sp0.Y
-                        local x1 = sp1.X
-                        local y1 = sp1.Y
+                        local x0, y0, v0 = Project(p0)
+                        local x1, y1, v1 = Project(p1)
                         local line = Items["SkeletonLines"][idx]
                         if v0 and v1 then
                             local delta = Vector2.new(x1 - x0, y1 - y0)
