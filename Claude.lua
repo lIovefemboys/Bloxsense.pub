@@ -4055,8 +4055,6 @@ local Library = {
                 if Preview.ESPFrameCount <= 5 then
                     warn("ESPPreview: Center=", Center, "Size=", Size)
                     warn("ESPPreview: Camera CFrame=", Camera.CFrame, "ViewportSize=", Viewport.AbsoluteSize)
-                    warn("ESPPreview: Viewport.CurrentCamera==Camera?", Viewport.CurrentCamera == Camera)
-                    warn("ESPPreview: Camera.ViewportSize=", Camera.ViewportSize)
                     local testSp = Camera:WorldToViewportPoint(Center)
                     warn("ESPPreview: Center viewport point=", testSp)
                 end
