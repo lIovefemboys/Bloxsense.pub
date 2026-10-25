@@ -4311,20 +4311,13 @@ local Library = {
                     IsSelected = false,
                     IsHovered = false
                 }
-
-                OptionData.Text:ChangeItemTheme({TextColor3 = function()
-                    return (OptionData.IsSelected or OptionData.IsHovered) and Library.Theme["Accent"] or Library.Theme["Text"]
-                end})
                 
                 function OptionData:ToggleState(State)
                     local IsActive = State == "Active"
                     local IsHighlighted = OptionData.IsSelected or OptionData.IsHovered
                     local TextColor = IsHighlighted and Library.Theme["Accent"] or Library.Theme["Text"]
-                    local TextPosition = IsActive and UDim2.new(0, 0, 0, 0) or UDim2.new(0, 0, 0, 5)
-                    local LineSize = IsActive and UDim2.new(0, 18, 0, 2) or UDim2.new(0, 0, 0, 2)
 
-                    OptionData.Text:Tween({TextColor3 = TextColor, Position = TextPosition})
-                    OptionData.Liner:Tween({Size = LineSize})
+                    OptionData.Text:Tween({TextColor3 = TextColor})
                 end
 
                 OptionData.Button:OnHover(function()
