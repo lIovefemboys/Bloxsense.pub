@@ -1413,15 +1413,24 @@ local Library = {
                     Parent = Items["ColorpickerWindow"].Instance,
                     ClearTextOnFocus = false,
                     Text = "",
-                    PlaceholderText = "RGB  255, 255, 255",
+                    PlaceholderText = "255, 255, 255",
                     PlaceholderColor3 = Library.Theme["Inactive Text"],
                     TextColor3 = Library.Theme["Text"],
                     TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    TextWrapped = false,
                     Position = UDim2.new(0, 8, 0, 222),
                     Size = UDim2.new(1, -16, 0, 20),
                     BackgroundColor3 = Library.Theme["Element"],
                     BorderSizePixel = 0
                 }):AddToTheme({BackgroundColor3 = 'Element', TextColor3 = 'Text', PlaceholderColor3 = 'Inactive Text'})
+
+                Library:Create("UIPadding", {
+                    Name = "\0",
+                    Parent = Items["RGBInput"].Instance,
+                    PaddingLeft = UDim.new(0, 5),
+                    PaddingRight = UDim.new(0, 5)
+                })
 
                 Library:Create("UIStroke", {
                     Name = "\0",
@@ -1438,15 +1447,24 @@ local Library = {
                     Parent = Items["ColorpickerWindow"].Instance,
                     ClearTextOnFocus = false,
                     Text = "",
-                    PlaceholderText = "HEX  #FFFFFF",
+                    PlaceholderText = "#FFFFFF",
                     PlaceholderColor3 = Library.Theme["Inactive Text"],
                     TextColor3 = Library.Theme["Text"],
                     TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    TextWrapped = false,
                     Position = UDim2.new(0, 8, 0, 246),
                     Size = UDim2.new(1, -16, 0, 20),
                     BackgroundColor3 = Library.Theme["Element"],
                     BorderSizePixel = 0
                 }):AddToTheme({BackgroundColor3 = 'Element', TextColor3 = 'Text', PlaceholderColor3 = 'Inactive Text'})
+
+                Library:Create("UIPadding", {
+                    Name = "\0",
+                    Parent = Items["HexInput"].Instance,
+                    PaddingLeft = UDim.new(0, 5),
+                    PaddingRight = UDim.new(0, 5)
+                })
 
                 Library:Create("UIStroke", {
                     Name = "\0",
@@ -3063,6 +3081,7 @@ local Library = {
             end)
 
             Window:Center()
+            Library.WindowObject = Window
             return setmetatable(Window, Library)
         end
 
@@ -5311,8 +5330,19 @@ local Library = {
             return setmetatable(Slider, Library)
         end
 
-        Library.InitWindow = function(Self)
-            local SettingsPage = Self:Page({Name = "Settings"})
+        Library.InitWindow = function(Self, TargetWindow)
+            local Window = TargetWindow or (Self == Library and Library.WindowObject) or Self
+
+            if not Window or not Window.Items or not Window.Items["Pages"] then
+                warn("InitWindow requires a window. Use Window:InitWindow() or Library:InitWindow(Window).")
+                return
+            end
+
+            if Window.SettingsPage then
+                return Window.SettingsPage
+            end
+
+            local SettingsPage = Window:Page({Name = "Settings"})
 
             local GeneralSubPage = SettingsPage:SubPage({Name = "General"})
 
@@ -5594,6 +5624,8 @@ local Library = {
                 Library:GetThemesList(ThemesDropdown)
             end
 
+            Window.SettingsPage = SettingsPage
+
             Library:Thread(function()
                 local Success, Result = Library:LoadAutoload()
 
@@ -5605,6 +5637,8 @@ local Library = {
                     Library:Notification("Failed to autoload: \n" .. tostring(Result), 3, Color3.fromRGB(255, 0, 0))
                 end
             end)
+
+            return SettingsPage
         end
     end
 end
