@@ -3647,6 +3647,252 @@ local Library = {
             return setmetatable(Section, Library)
         end
 
+        Library.ESPPreview = function(Self, Params)
+            Params = Params or { }
+
+            local Preview = {
+                Name = Params.Name or Params.name or "ESP Preview",
+                Window = Self.Window,
+                Page = Self.Page,
+                Section = Self,
+                Zoom = Params.Zoom or 9,
+                Rotation = 0,
+                Dragging = false,
+                Connections = {},
+                Items = {}
+            }
+
+            local Items = Preview.Items
+            local Parent = Self.Items["Content"]
+
+            Items["Container"] = Library:Create("Frame", {
+                Name = "\0",
+                Parent = Parent.Instance,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 184),
+                BorderSizePixel = 0
+            })
+
+            Items["Title"] = Library:Create("TextLabel", {
+                Name = "\0",
+                FontFace = Library.Font,
+                TextSize = Library.FontSize,
+                Parent = Items["Container"].Instance,
+                TextColor3 = Library.Theme["Text"],
+                Text = Preview.Name,
+                Size = UDim2.new(1, 0, 0, 15),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                BorderSizePixel = 0
+            }):AddToTheme({TextColor3 = 'Text'})
+
+            Items["Viewport"] = Library:Create("ViewportFrame", {
+                Name = "\0",
+                Parent = Items["Container"].Instance,
+                Position = UDim2.new(0, 0, 0, 19),
+                Size = UDim2.new(1, 0, 0, 165),
+                BackgroundColor3 = Library.Theme["Inline"],
+                BorderSizePixel = 0,
+                ClipsDescendants = true,
+                Active = true
+            }):AddToTheme({BackgroundColor3 = 'Inline'})
+
+            Library:Create("UIStroke", {
+                Name = "\0",
+                Parent = Items["Viewport"].Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Color = Library.Theme["Outline"]
+            }):AddToTheme({Color = 'Outline'})
+
+            Library:Create("UIStroke", {
+                Name = "\0",
+                Parent = Items["Viewport"].Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Color = Library.Theme["Outline 2"],
+                BorderOffset = UDim.new(0, 1)
+            }):AddToTheme({Color = 'Outline 2'})
+
+            Items["World"] = Library:Create("WorldModel", {
+                Name = "\\0",
+                Parent = Items["Viewport"].Instance
+            })
+
+            Items["Camera"] = Library:Create("Camera", {
+                Name = "\0",
+                FieldOfView = 35,
+                Parent = Items["Viewport"].Instance
+            })
+            Items["Viewport"].Instance.CurrentCamera = Items["Camera"].Instance
+
+            local function Bind(Signal, Callback)
+                local Connection = Library:Connect(Signal, Callback)
+                if Connection then
+                    table.insert(Preview.Connections, Connection)
+                end
+                return Connection
+            end
+
+            local function ApplyCamera()
+                local Camera = Items["Camera"].Instance
+                Camera.CFrame = CFrame.lookAt(Vector3.new(0, 2.8, Preview.Zoom), Vector3.new(0, 2.5, 0))
+            end
+
+            local function SetArchivable(Model, Archivable)
+                local Changed = {}
+                local Objects = {Model}
+
+                for _, Object in Model:GetDescendants() do
+                    table.insert(Objects, Object)
+                end
+
+                for _, Object in Objects do
+                    Changed[Object] = Object.Archivable
+                    Object.Archivable = Archivable
+                end
+
+                return Changed
+            end
+
+            local function RestoreArchivable(Changed)
+                for Object, Archivable in Changed do
+                    if Object.Parent then
+                        Object.Archivable = Archivable
+                    end
+                end
+            end
+
+            local function ClearCharacter()
+                for _, Child in Items["World"].Instance:GetChildren() do
+                    Child:Destroy()
+                end
+                Preview.CharacterModel = nil
+            end
+
+            function Preview:Refresh(Character)
+                if self.Destroyed then
+                    return false
+                end
+
+                ClearCharacter()
+                Character = Character or LocalPlayer.Character
+                if not Character then
+                    return false
+                end
+
+                local ArchivableStates = SetArchivable(Character, true)
+                local Success, Model = pcall(function()
+                    return Character:Clone()
+                end)
+                RestoreArchivable(ArchivableStates)
+
+                if not Success or not Model then
+                    warn("ESPPreview could not clone the local character")
+                    return false
+                end
+
+                for _, Object in Model:GetDescendants() do
+                    if Object:IsA("Script") or Object:IsA("LocalScript") then
+                        Object:Destroy()
+                    elseif Object:IsA("BasePart") then
+                        Object.Anchored = true
+                        Object.CanCollide = false
+                    elseif Object:IsA("Humanoid") then
+                        Object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+                        Object.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+                    end
+                end
+
+                Model.Name = "LocalPlayerPreview"
+                Model.Parent = Items["World"].Instance
+
+                local Bounds, Size = Model:GetBoundingBox()
+                local Pivot = Model:GetPivot()
+                local Offset = CFrame.new(-Bounds.Position.X, Size.Y / 2 - Bounds.Position.Y, -Bounds.Position.Z)
+                Preview.BasePivot = Offset * Pivot
+                Preview.Zoom = math.max(Preview.Zoom, Size.Y / (2 * math.tan(math.rad(Items["Camera"].Instance.FieldOfView / 2))) * 1.1)
+                Preview.CharacterModel = Model
+                self:SetRotation(self.Rotation)
+                ApplyCamera()
+                return true
+            end
+
+            function Preview:SetZoom(Zoom)
+                self.Zoom = math.clamp(tonumber(Zoom) or self.Zoom, 4, 14)
+                ApplyCamera()
+            end
+
+            function Preview:SetRotation(Rotation)
+                self.Rotation = tonumber(Rotation) or self.Rotation
+                if self.CharacterModel and self.BasePivot then
+                    self.CharacterModel:PivotTo(CFrame.Angles(0, math.pi + self.Rotation, 0) * self.BasePivot)
+                end
+            end
+
+            function Preview:SetVisibility(Visible)
+                Items["Container"].Instance.Visible = Visible
+            end
+
+            function Preview:Destroy()
+                if self.Destroyed then
+                    return
+                end
+                self.Destroyed = true
+
+                for _, Connection in self.Connections do
+                    Connection:Disconnect()
+                end
+                table.clear(self.Connections)
+                ClearCharacter()
+                Items["Container"].Instance:Destroy()
+            end
+
+            ApplyCamera()
+            Preview:Refresh()
+
+            Bind(Items["Viewport"].Instance.InputBegan, function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                    Preview.Dragging = true
+                    Preview.LastDragX = Input.Position.X
+                    Preview.DragInputType = Input.UserInputType
+                end
+            end)
+
+            Bind(UserInputService.InputChanged, function(Input)
+                local IsDragMovement = Preview.DragInputType == Enum.UserInputType.Touch
+                    and Input.UserInputType == Enum.UserInputType.Touch
+                    or Preview.DragInputType == Enum.UserInputType.MouseButton1
+                    and Input.UserInputType == Enum.UserInputType.MouseMovement
+
+                if Preview.Dragging and IsDragMovement then
+                    local DeltaX = Input.Position.X - Preview.LastDragX
+                    Preview.LastDragX = Input.Position.X
+                    Preview:SetRotation(Preview.Rotation + DeltaX * 0.01)
+                elseif Input.UserInputType == Enum.UserInputType.MouseWheel and Library:IsMouseOverFrame(Items["Viewport"]) then
+                    Preview:SetZoom(Preview.Zoom - Input.Position.Z * 0.6)
+                end
+            end)
+
+            Bind(UserInputService.InputEnded, function(Input)
+                if Input.UserInputType == Preview.DragInputType then
+                    Preview.Dragging = false
+                    Preview.DragInputType = nil
+                end
+            end)
+
+            Bind(LocalPlayer.CharacterAdded, function(Character)
+                task.defer(function()
+                    Character:WaitForChild("HumanoidRootPart", 5)
+                    if not Preview.Destroyed and LocalPlayer.Character == Character then
+                        Preview:Refresh(Character)
+                    end
+                end)
+            end)
+
+            return setmetatable(Preview, Library)
+        end
+
         Library.Toggle = function(Self, Params)
             Params = Params or { }
 
