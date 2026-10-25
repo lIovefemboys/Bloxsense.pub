@@ -519,6 +519,18 @@ local Library = {
         end)
     end
 
+    Library.SetPreviewFramesVisible = function(Self, Parent, Visible)
+        if not Parent then
+            return
+        end
+
+        for _, Frame in Library.PreviewFrames do
+            if Frame and Frame.Parent and Frame:IsDescendantOf(Parent) then
+                Frame.Visible = Visible
+            end
+        end
+    end
+
     Library.IsPointerOverPreview = function(Self, Position)
         Position = Position or Vector2.new(Mouse.X, Mouse.Y)
 
@@ -771,9 +783,11 @@ local Library = {
         return Success, Result
     end
 
-    Library.Round = function(Self, Number, Float)
-        local Multiplier = 1 / (Float or 1)
-        return math.floor(Number * Multiplier) / Multiplier
+    Library.Round = function(Self, Number, Decimals)
+        local Multiplier = 10 ^ math.max(tonumber(Decimals) or 0, 0)
+        local Scaled = Number * Multiplier
+        local Rounded = Scaled >= 0 and math.floor(Scaled + 0.5) or math.ceil(Scaled - 0.5)
+        return Rounded / Multiplier
     end
 
     Library.GetConfig = function(Self)
@@ -2068,9 +2082,11 @@ local Library = {
                 Name = "Show In Keybinds List",
                 Flag = Keybind.Flag .. "ShowInKeybindsList",
                 Parent = Items["KeybindWindow"],
-                Default = true,
+                Default = KeybindObject ~= nil,
                 Callback = function(Value)
-                    KeybindObject:SetVis(Value)
+                    if KeybindObject then
+                        KeybindObject:SetVis(Value)
+                    end
                 end
             })
     
@@ -3364,6 +3380,7 @@ local Library = {
                 local SlideDir = NewIndex >= OldIndex and 1 or -1
                 
                 if Old then 
+                    Library:SetPreviewFramesVisible(Old.Items["Page"].Instance, false)
                     Old.Items["Title"]:ChangeItemTheme({TextColor3 = "Inactive Text"})
                     Old.Items["Title"]:Tween({TextColor3 = Library.Theme["Inactive Text"]}, TabTween)
                     Old.Items["Connect"].Instance.Visible = false 
@@ -3381,6 +3398,7 @@ local Library = {
 
                 Items["Page"].Instance.Parent = Page.Window.Items["Content"].Instance
                 Items["Page"].Instance.Visible = true
+                Library:SetPreviewFramesVisible(Items["Page"].Instance, true)
                 Items["Page"].Instance.Position = UDim2.new(0, 18 * SlideDir, 0, 0)
                 Items["Page"]:Tween({Position = UDim2.new(0, 0, 0, 0)}, TabTween)
                 Items["Page"]:FadeDescendants(true, function()
@@ -3553,6 +3571,7 @@ local Library = {
                 local SlideDir = NewIndex >= OldIndex and 1 or -1
                 
                 if Old then 
+                    Library:SetPreviewFramesVisible(Old.Items["Page"].Instance, false)
                     Old.Items["Inactive"]:ChangeItemTheme({TextColor3 = "Inactive Text"})
                     Old.Items["Inactive"]:Tween({TextColor3 = Library.Theme["Inactive Text"]}, SubTween)
 
@@ -3568,6 +3587,7 @@ local Library = {
 
                 Items["Page"].Instance.Parent = Page.Page.Items["Columns"].Instance
                 Items["Page"].Instance.Visible = true
+                Library:SetPreviewFramesVisible(Items["Page"].Instance, true)
                 Items["Page"].Instance.Position = UDim2.new(0, 0, 0, -12 * SlideDir)
                 Items["Page"]:Tween({Position = UDim2.new(0, 0, 0, 0)}, SubTween)
                 Items["Page"]:FadeDescendants(true, function()
@@ -3688,6 +3708,8 @@ local Library = {
                 Rotation = 0,
                 AutoRotate = Params.AutoRotate ~= false,
                 RotationSpeed = tonumber(Params.RotationSpeed) or 0.8,
+                UserId = nil,
+                LoadGeneration = 0,
                 Dragging = false,
                 Connections = {},
                 Items = {}
@@ -3807,11 +3829,14 @@ local Library = {
                     return false
                 end
 
+                self.LoadGeneration += 1
                 ClearCharacter()
                 Character = Character or LocalPlayer.Character
                 if not Character then
                     return false
                 end
+
+                self.UserId = nil
 
                 local ArchivableStates = SetArchivable(Character, true)
                 local Success, Model = pcall(function()
@@ -3850,6 +3875,66 @@ local Library = {
                 return true
             end
 
+            function Preview:SetUserId(UserId)
+                UserId = tonumber(UserId)
+                if not UserId or UserId <= 0 then
+                    return false
+                end
+                if self.Destroyed then
+                    return false
+                end
+
+                self.LoadGeneration += 1
+                local Generation = self.LoadGeneration
+                self.UserId = UserId
+                ClearCharacter()
+
+                task.spawn(function()
+                    local Success, Model = pcall(function()
+                        local Description = Players:GetHumanoidDescriptionFromUserId(UserId)
+                        return Players:CreateHumanoidModelFromDescription(Description, Enum.HumanoidRigType.R15)
+                    end)
+
+                    if self.Destroyed or Generation ~= self.LoadGeneration then
+                        if Success and Model then
+                            Model:Destroy()
+                        end
+                        return
+                    end
+
+                    if not Success or not Model then
+                        warn("ESPPreview failed to load avatar for user " .. tostring(UserId))
+                        return
+                    end
+
+                    for _, Object in Model:GetDescendants() do
+                        if Object:IsA("Script") or Object:IsA("LocalScript") then
+                            Object:Destroy()
+                        elseif Object:IsA("BasePart") then
+                            Object.Anchored = true
+                            Object.CanCollide = false
+                        elseif Object:IsA("Humanoid") then
+                            Object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+                            Object.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+                        end
+                    end
+
+                    Model.Name = "AvatarPreview_" .. tostring(UserId)
+                    Model.Parent = Items["World"].Instance
+
+                    local Bounds, Size = Model:GetBoundingBox()
+                    local Pivot = Model:GetPivot()
+                    local Offset = CFrame.new(-Bounds.Position.X, Size.Y / 2 - Bounds.Position.Y, -Bounds.Position.Z)
+                    Preview.BasePivot = Offset * Pivot
+                    Preview.Zoom = math.clamp(Size.Y / (2 * math.tan(math.rad(Items["Camera"].Instance.FieldOfView / 2))) * 1.1, 4, 14)
+                    Preview.CharacterModel = Model
+                    self:SetRotation(self.Rotation)
+                    ApplyCamera()
+                end)
+
+                return true
+            end
+
             function Preview:SetZoom(Zoom)
                 self.Zoom = math.clamp(tonumber(Zoom) or self.Zoom, 4, 14)
                 ApplyCamera()
@@ -3875,6 +3960,7 @@ local Library = {
                     return
                 end
                 self.Destroyed = true
+                self.LoadGeneration += 1
                 self.Dragging = false
                 Library.PreviewDragActive = false
                 local PreviewFrameIndex = table.find(Library.PreviewFrames, Items["Viewport"].Instance)
@@ -3934,7 +4020,7 @@ local Library = {
             Bind(LocalPlayer.CharacterAdded, function(Character)
                 task.defer(function()
                     Character:WaitForChild("HumanoidRootPart", 5)
-                    if not Preview.Destroyed and LocalPlayer.Character == Character then
+                    if not Preview.Destroyed and not Preview.UserId and LocalPlayer.Character == Character then
                         Preview:Refresh(Character)
                     end
                 end)
@@ -4409,6 +4495,11 @@ local Library = {
             end
 
             function Slider:Set(Value)
+                Value = tonumber(Value)
+                if not Value or Value ~= Value or Value == math.huge or Value == -math.huge or Slider.Max <= Slider.Min then
+                    return
+                end
+
                 Slider.Value = Library:Round(math.clamp(Value, Slider.Min, Slider.Max), Slider.Decimals)
 
                 local Percent = (Slider.Value - Slider.Min) / (Slider.Max - Slider.Min)
@@ -4425,10 +4516,13 @@ local Library = {
             end
 
             function Slider:GetSize(Input)
-                local SizeX = (Input.Position.X - Items["RealSlider"].Instance.AbsolutePosition.X) / Items["RealSlider"].Instance.AbsoluteSize.X
-                local Value = ((Slider.Max - Slider.Min) * SizeX) + Slider.Min
+                local Width = Items["RealSlider"].Instance.AbsoluteSize.X
+                if Width <= 0 then
+                    return Slider.Value
+                end
 
-                return Value
+                local SizeX = math.clamp((Input.Position.X - Items["RealSlider"].Instance.AbsolutePosition.X) / Width, 0, 1)
+                return ((Slider.Max - Slider.Min) * SizeX) + Slider.Min
             end
 
             function Slider:SetText(Text)
