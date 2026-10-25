@@ -7,35 +7,19 @@
 ]]
 
 if not LPH_OBFUSCATED then
-    LPH_JIT = LPH_JIT or function(...)
-        return ...
-    end
-    LPH_JIT_MAX = LPH_JIT_MAX or function(...)
-        return ...
-    end
-    LPH_NO_VIRTUALIZE = LPH_NO_VIRTUALIZE or function(...)
-        return ...
-    end
+    LPH_JIT = LPH_JIT or function(...) return ... end
+    LPH_JIT_MAX = LPH_JIT_MAX or function(...) return ... end
+    LPH_NO_VIRTUALIZE = LPH_NO_VIRTUALIZE or function(...) return ... end
     LPH_NO_UPVALUES = LPH_NO_UPVALUES or function(f)
-        return function(...)
-            return f(...)
-        end
+        return function(...) return f(...) end
     end
-    LPH_ENCSTR = LPH_ENCSTR or function(...)
-        return ...
-    end
-    LPH_ENCNUM = LPH_ENCNUM or function(...)
-        return ...
-    end
+    LPH_ENCSTR = LPH_ENCSTR or function(...) return ... end
+    LPH_ENCNUM = LPH_ENCNUM or function(...) return ... end
     LPH_ENCFUNC = LPH_ENCFUNC or function(func, key1, key2)
-        if key1 ~= key2 then
-            return print("LPH_ENCFUNC mismatch")
-        end
+        if key1 ~= key2 then return print("LPH_ENCFUNC mismatch") end
         return func
     end
-    LPH_CRASH = LPH_CRASH or function()
-        return print(debug.traceback())
-    end
+    LPH_CRASH = LPH_CRASH or function() return print(debug.traceback()) end
 end
 
 local UserInputService = game:GetService("UserInputService")
@@ -46,35 +30,6 @@ local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
-
-local function NormalizeTeam(raw)
-    local s = string.lower(tostring(raw or "")):gsub("[%s_]+", "")
-    if s == "counter-terrorists" or s == "counterterrorists" or s == "ct" then return "CT" end
-    if s == "terrorists" or s == "terrorist" or s == "t" then return "T" end
-    return nil
-end
-
-local function GetTeam(player)
-    if not player then return nil end
-    local sources = {}
-    pcall(function() table.insert(sources, player:GetAttribute("Team")) end)
-    pcall(function() table.insert(sources, player:GetAttribute("TeamName")) end)
-    pcall(function() table.insert(sources, player:GetAttribute("Side")) end)
-    pcall(function() table.insert(sources, player:GetAttribute("TeamColor")) end)
-    pcall(function() table.insert(sources, player:GetAttribute("TeamId")) end)
-    pcall(function() if player.Team then table.insert(sources, player.Team.Name) end end)
-    pcall(function() if player.TeamColor then table.insert(sources, player.TeamColor.Name) end end)
-    for _, src in ipairs(sources) do
-        local n = NormalizeTeam(src)
-        if n then return n end
-    end
-    return nil
-end
-
-local function IsPlaying(team)
-    return team == "CT" or team == "T"
-end
-
 local WtS = Camera.WorldToViewportPoint
 local UIContainer = gethui and gethui() or CoreGui
 local BootstrapPlayers = Players
@@ -92,65 +47,35 @@ if getgenv().SensoryESP_Unload then
 end
 
 local oldChams = UIContainer:FindFirstChild("SensoryESP_Chams")
-if oldChams then
-    pcall(function() oldChams:Destroy() end)
-end
+if oldChams then pcall(function() oldChams:Destroy() end) end
 
 local oldMeshFolder = Workspace:FindFirstChild("SensoryESP_MeshChams")
-if oldMeshFolder then
-    pcall(function() oldMeshFolder:Destroy() end)
-end
+if oldMeshFolder then pcall(function() oldMeshFolder:Destroy() end) end
 
 local function IsMeshChamArtifact(obj)
-    if not obj then
-        return false
-    end
-
-    if obj:GetAttribute("SensoryESP_MeshCham") == true then
-        return true
-    end
-
-    if obj:IsA("Model") and obj.Name == "ChamShells" then
-        return true
-    end
-
-    if obj:IsA("BasePart") and obj.Name:match("^ChamShell_") then
-        return true
-    end
-
-    if obj:IsA("Highlight") and obj.Name == "ChamShellHighlight" then
-        return true
-    end
-
+    if not obj then return false end
+    if obj:GetAttribute("SensoryESP_MeshCham") == true then return true end
+    if obj:IsA("Model") and obj.Name == "ChamShells" then return true end
+    if obj:IsA("BasePart") and obj.Name:match("^ChamShell_") then return true end
+    if obj:IsA("Highlight") and obj.Name == "ChamShellHighlight" then return true end
     return false
 end
 
 local function CleanupMeshChams(root)
-    if not root then
-        return
-    end
-
+    if not root then return end
     for _, obj in ipairs(root:GetDescendants()) do
-        if IsMeshChamArtifact(obj) then
-            pcall(function() obj:Destroy() end)
-        end
+        if IsMeshChamArtifact(obj) then pcall(function() obj:Destroy() end) end
     end
 end
 
 local function CleanupCharacterMeshChams(character)
-    if not character then
-        return
-    end
-
+    if not character then return end
     for _, child in ipairs(character:GetChildren()) do
-        if IsMeshChamArtifact(child) then
-            pcall(function() child:Destroy() end)
-        end
+        if IsMeshChamArtifact(child) then pcall(function() child:Destroy() end) end
     end
 end
 
 CleanupMeshChams(Workspace)
-
 for _, player in ipairs(BootstrapPlayers:GetPlayers()) do
     CleanupCharacterMeshChams(player.Character)
 end
@@ -161,13 +86,11 @@ local function EnsureRootInstances()
         ChamsContainer.Name = "SensoryESP_Chams"
         ChamsContainer.Parent = UIContainer
     end
-
     if not MeshChamsFolder or not MeshChamsFolder.Parent then
         MeshChamsFolder = Instance.new("Folder")
         MeshChamsFolder.Name = "SensoryESP_MeshChams"
         MeshChamsFolder.Parent = Workspace
     end
-
     if not ScreenGui or not ScreenGui.Parent then
         ScreenGui = Instance.new("ScreenGui")
         ScreenGui.Name = "SensoryESP"
@@ -175,13 +98,8 @@ local function EnsureRootInstances()
         ScreenGui.IgnoreGuiInset = true
         ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
         getgenv().SensoryESP_UI = ScreenGui
-
-        local success = pcall(function()
-            ScreenGui.Parent = CoreGui
-        end)
-        if not success then
-            ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-        end
+        local success = pcall(function() ScreenGui.Parent = CoreGui end)
+        if not success then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
     end
 end
 
@@ -190,7 +108,6 @@ local DrawLine = LPHNoVirtualize(function(line, p1, p2, thickness, color)
     local diff = p2 - p1
     local dist = diff.Magnitude
     local angle = math.deg(math.atan2(diff.Y, diff.X))
-
     line.Size = UDim2.new(0, math.floor(dist + 0.5), 0, thickness)
     line.Position = UDim2.new(0, math.floor(p1.X + diff.X / 2 - dist / 2 + 0.5), 0,
         math.floor(p1.Y + diff.Y / 2 - thickness / 2 + 0.5))
@@ -202,31 +119,31 @@ end)
 local ESPConfig = {
     -- esp checks
     Enabled = false,
-    Keybind = {
-        Enabled = false,
-        Key = Enum.KeyCode.Insert,
-    },
+    Keybind = { Enabled = false, Key = Enum.KeyCode.Insert },
     Players = false,
-    TeamCheck = false,
     LocalPlayer = false,
-    LimitFPS = 70, -- Set to 0 to disable limit
+    LimitFPS = 70,
     DynamicBoxes = true,
-    DynamicBoxesCheap = false,           -- needs DynamicBoxes enabled, only tracks main parts
-    DynamicBoxesIncludeAll = false,      -- needs DynamicBoxes enabled, includes every BasePart in the model
+    DynamicBoxesCheap = false,
+    DynamicBoxesIncludeAll = false,
     VisibilityCheckRate = 0.3,
+
+    -- [TEAMCHECK] team check settings
+    TeamCheck = false,               -- включить team check
+    TeamCheckMode = "Team",          -- "Team" | "Friends" | "Both"
+    TeamCheckHideTeammates = true,   -- true = полностью скрыть союзников, false = только убрать боксы/чамсы
 
     -- boxes
     Boxes = false,
-    BoxType = "Normal", -- "Normal", "Corner", or "Circle"
+    BoxType = "Normal",
     BoxColor = Color3.fromRGB(255, 255, 255),
     BoxThickness = 1,
     Outlines = {
-        Style = "Full", -- "Full", "None"
+        Style = "Full",
         Color = Color3.fromRGB(0, 0, 0),
         Thickness = 1,
     },
 
-    -- boxfill
     BoxFill = {
         Enabled = false,
         Color = Color3.fromRGB(255, 255, 255),
@@ -238,15 +155,14 @@ local ESPConfig = {
             Color3 = Color3.fromRGB(0, 120, 255),
             Rotation = 0,
             Animated = false,
-            Speed = 64,          -- degrees per second
-            Direction = "Right", -- "Left" or "Right"
+            Speed = 64,
+            Direction = "Right",
         }
     },
 
-    -- healthbar
     HealthBar = {
         Enabled = false,
-        Position = "Left", -- "Left", "Right", "Top", "Bottom"
+        Position = "Left",
         SideGap = 2,
         Width = 2,
         ShowText = false,
@@ -255,29 +171,25 @@ local ESPConfig = {
         FollowGradientColorText = false,
         Font = "Smallest Pixel-7",
         TextSize = 9,
-        Outline = {
-            Style = "Full",
-            Color = Color3.fromRGB(0, 0, 0),
-        },
+        Outline = { Style = "Full", Color = Color3.fromRGB(0, 0, 0) },
         Gradient = {
             Enabled = false,
-            Color1 = Color3.fromRGB(0, 255, 0),   -- Full health
-            Color2 = Color3.fromRGB(255, 255, 0), -- Mid health
-            Color3 = Color3.fromRGB(255, 0, 0),   -- Low health
+            Color1 = Color3.fromRGB(0, 255, 0),
+            Color2 = Color3.fromRGB(255, 255, 0),
+            Color3 = Color3.fromRGB(255, 0, 0),
         }
     },
 
-    -- names
     Names = false,
     TextSize = 12,
     TextColor = Color3.fromRGB(255, 255, 255),
     TextOutline = false,
-    TextOutlineStyle = "Full", -- "Full", "None"
+    TextOutlineStyle = "Full",
     TextGap = 3,
     Font = "Proggy Clean",
     TeamIndicator = {
         Enabled = false,
-        Position = "Right", -- "Left" or "Right"
+        Position = "Right",
         UseTeamColor = false,
         Color = Color3.fromRGB(255, 255, 255),
         Compact = false,
@@ -285,7 +197,7 @@ local ESPConfig = {
     },
     FriendlyIndicator = {
         Enabled = false,
-        Position = "Right", -- "Left" or "Right"
+        Position = "Right",
         CheckTeam = false,
         CheckFriends = false,
         Text = "[F]",
@@ -302,7 +214,6 @@ local ESPConfig = {
         UseToolFallback = false,
     },
 
-    -- flags
     Flags = {
         Enabled = false,
         Position = "Right",
@@ -312,12 +223,7 @@ local ESPConfig = {
         OutlineStyle = "Full",
         Font = "Smallest Pixel-7",
         TextSize = 9,
-        Options = {
-            Idle = false,
-            Moving = false,
-            Jumping = false,
-            Swimming = false,
-        },
+        Options = { Idle = false, Moving = false, Jumping = false, Swimming = false },
         Colors = {
             Idle = Color3.fromRGB(255, 255, 255),
             Moving = Color3.fromRGB(255, 255, 255),
@@ -326,20 +232,14 @@ local ESPConfig = {
         }
     },
 
-    --skeleton
     Skeleton = {
         Enabled = false,
         Color = Color3.fromRGB(255, 255, 255),
         Outline = false,
         OutlineColor = Color3.fromRGB(0, 0, 0),
-        Gradient = {
-            Enabled = false,
-            Color1 = Color3.fromRGB(255, 255, 255),
-            Color2 = Color3.fromRGB(100, 200, 255),
-        },
+        Gradient = { Enabled = false, Color1 = Color3.fromRGB(255, 255, 255), Color2 = Color3.fromRGB(100, 200, 255) },
     },
 
-    -- off-screen arrows
     OffScreenArrows = {
         Enabled = false,
         Size = 14,
@@ -349,28 +249,17 @@ local ESPConfig = {
         Outline = false,
         OutlineColor = Color3.fromRGB(0, 0, 0),
         Names = {
-            Enabled = false,
-            Font = "Smallest Pixel-7",
-            TextSize = 9,
-            Color = Color3.fromRGB(255, 255, 255),
-            Outline = true,
-            OutlineColor = Color3.fromRGB(0, 0, 0),
-            Side = "Bottom",
-            Gap = 4,
+            Enabled = false, Font = "Smallest Pixel-7", TextSize = 9,
+            Color = Color3.fromRGB(255, 255, 255), Outline = true,
+            OutlineColor = Color3.fromRGB(0, 0, 0), Side = "Bottom", Gap = 4,
         },
         Distance = {
-            Enabled = false,
-            Font = "Smallest Pixel-7",
-            TextSize = 9,
-            Color = Color3.fromRGB(255, 255, 255),
-            Outline = false,
-            OutlineColor = Color3.fromRGB(0, 0, 0),
-            Side = "Bottom",
-            Gap = 2,
+            Enabled = false, Font = "Smallest Pixel-7", TextSize = 9,
+            Color = Color3.fromRGB(255, 255, 255), Outline = false,
+            OutlineColor = Color3.fromRGB(0, 0, 0), Side = "Bottom", Gap = 2,
         },
     },
 
-    -- distance
     Distance = {
         Enabled = false,
         Unit = "Meters",
@@ -383,19 +272,16 @@ local ESPConfig = {
         Color = Color3.fromRGB(255, 255, 255),
     },
 
-    -- chams
     Chams = {
         Enabled = false,
-        Type = "MeshChams", -- "Highlight", "Adornment", or "MeshChams"
-
+        Type = "MeshChams",
         Highlight = {
             FillColor = Color3.fromRGB(255, 255, 255),
             FillTransparency = 1,
             OutlineColor = Color3.fromRGB(255, 255, 255),
             OutlineTransparency = 0,
-            VisibleCheck = false, -- true = Occluded, false = AlwaysOnTop
+            VisibleCheck = false,
         },
-
         Adornment = {
             Color = Color3.fromRGB(59, 144, 204),
             VisibleColor = Color3.fromRGB(59, 204, 90),
@@ -403,19 +289,15 @@ local ESPConfig = {
             AlwaysOnTop = false,
             VisibleCheck = false,
         },
-
-        -- MeshChams: shell parts welded to each body part with a single Highlight.
-        -- Only works on humanoid targets (players / NPCs with a Humanoid).
         MeshChams = {
             FillColor = Color3.fromRGB(59, 144, 204),
             FillTransparency = 0.6,
             OutlineColor = Color3.fromRGB(255, 255, 255),
             OutlineTransparency = 0,
-            VisibleCheck = false, -- true = Occluded, false = AlwaysOnTop
+            VisibleCheck = false,
         },
     },
 
-    -- directories
     Directories = {
         --[[{
                 DisplayName = "Part",
@@ -424,186 +306,19 @@ local ESPConfig = {
                 Cheap = true,
                 Contains = {},
                 Names = {"Part"}
-            },
-        {
-            DisplayName = "Dummy",
-            Path = "workspace",
-            Multiple = true,
-            Cheap = false,
-            Contains = {},
-            NonHuman = false,
-            NoStatus = false,
-            Names = { "Dummy", "Rig" }
-        },
-        {
-            DisplayName = "UAZ",
-            Path = "workspace",
-            Multiple = true,
-            Cheap = false,
-            NonHuman = true,
-            NoStatus = true,
-            Contains = {},
-            Names = { "UAZ" },
-            Config = {
-                -- Box Settings
-                Boxes = true,
-                BoxColor = Color3.fromRGB(255, 150, 0),
-                BoxThickness = 1.5,
-
-
-                BoxFill = {
-                    Enabled = true,
-                    Color = Color3.fromRGB(255, 150, 0),
-                    Transparency = 0.8,
-                    Gradient = {
-                        Enabled = true,
-                        Color1 = Color3.fromRGB(255, 150, 0),
-                        Color2 = Color3.fromRGB(255, 255, 255),
-                        Color3 = Color3.fromRGB(255, 150, 0),
-                        Rotation = 0,
-                        Animated = true,
-                        Speed = 90,
-                        Direction = "Left",
-                    }
-                },
-
-                -- Text Settings
-                TextColor = Color3.fromRGB(255, 200, 50),
-                TextSize = 12,
-                TextOutline = true,
-                TextGap = 4,
-                Font = "Proggy Clean",
-
-                -- Distance Settings
-                Distance = {
-                    Enabled = true,
-                    Unit = "Meters",
-                    Ending = "m",
-                    Gap = 5,
-                    Color = Color3.fromRGB(255, 200, 50),
-                },
-
-                -- Chams Settings
-                Chams = {
-                    Enabled = true,
-                    Type = "Highlight",
-                    Highlight = {
-                        FillColor = Color3.fromRGB(255, 150, 0),
-                        FillTransparency = 0.7,
-                        OutlineColor = Color3.fromRGB(255, 255, 255),
-                        OutlineTransparency = 1,
-                        VisibleCheck = false,
-                    },
-                    Adornment = {
-                        Color = Color3.fromRGB(255, 150, 0),
-                        VisibleColor = Color3.fromRGB(0, 255, 0),
-                        Transparency = 0.5,
-                        AlwaysOnTop = true,
-                        VisibleCheck = true,
-                    }
-                },
-
-                -- Flags Settings
-                Flags = {
-                    Enabled = true,
-                    Position = "Left",
-                    SideGap = 4,
-                    TextGap = 2,
-                    Font = "Smallest Pixel-7",
-                    TextSize = 9,
-                    Options = {
-                        Idle = true,
-                        Moving = true,
-                    },
-                    Colors = {
-                        Idle = Color3.fromRGB(255, 255, 255),
-                        Moving = Color3.fromRGB(255, 150, 0),
-                    }
-                },
-
-                -- HealthBar Settings
-                HealthBar = {
-                    Enabled = true,
-                    Position = "Bottom",
-                    SideGap = 2,
-                    Width = 2,
-                    ShowText = true,
-                    TextFollowBar = true,
-                    HideWhenFullHP = false,
-                    FollowGradientColorText = true,
-                    Outline = {
-                        Style = "Full",
-                        Color = Color3.fromRGB(0, 0, 0),
-                    },
-                    Gradient = {
-                        Enabled = true,
-                        Color1 = Color3.fromRGB(0, 255, 0),
-                        Color2 = Color3.fromRGB(255, 255, 0),
-                        Color3 = Color3.fromRGB(255, 0, 0),
-                    }
-                },
-
-                -- Skeleton Settings (Template only, usually for players)
-                Skeleton = {
-                    Enabled = false,
-                    Color = Color3.fromRGB(255, 255, 255),
-                    Outline = true,
-                    OutlineColor = Color3.fromRGB(0, 0, 0),
-                }
-            }
-        },
-        {
-            DisplayName = "FPV Drone",
-            Path = "workspace",
-            Multiple = true,
-            Cheap = false,
-            NonHuman = true,
-            NoStatus = true,
-            Contains = {},
-            Names = { "FPVDrone" }
-        },
-        {
-            DisplayName = "",
-            Path = "workspace.AiZones",
-            Multiple = true,
-            Cheap = false,
-            NonHuman = false,
-            NoStatus = true,
-            Recursive = true,
-            Contains = {},
-            BlockNames = { "OutpostClaymores", "OutpostLandmines", "ElectricityAnomaly" },
-            Names = { "" }
-        },
-        --[[
-            {
-                DisplayName = "CashRegister",
-                Path = "workspace",
-                Multiple = true,
-                Cheap = true,
-                Contains = {},
-                Names = {"CashRegister"}
-            },
-        ]]
+            },]]
     }
 }
 
 local function DeepCopy(tbl)
-    if type(tbl) ~= "table" then
-        return tbl
-    end
-
+    if type(tbl) ~= "table" then return tbl end
     local copy = {}
-    for key, value in pairs(tbl) do
-        copy[key] = DeepCopy(value)
-    end
+    for key, value in pairs(tbl) do copy[key] = DeepCopy(value) end
     return copy
 end
 
 local function DeepMerge(base, override)
-    if type(override) ~= "table" then
-        return base
-    end
-
+    if type(override) ~= "table" then return base end
     for key, value in pairs(override) do
         if type(value) == "table" and type(base[key]) == "table" then
             DeepMerge(base[key], value)
@@ -611,40 +326,25 @@ local function DeepMerge(base, override)
             base[key] = value
         end
     end
-
     return base
 end
 
 local DefaultESPConfig = DeepCopy(ESPConfig)
 
 local function CompactTeamName(teamName)
-    if type(teamName) ~= "string" or teamName == "" then
-        return ""
-    end
-
+    if type(teamName) ~= "string" or teamName == "" then return "" end
     local parts = {}
     for part in teamName:gmatch("[^%s%-_]+") do
-        if part ~= "" then
-            table.insert(parts, part)
-        end
+        if part ~= "" then table.insert(parts, part) end
     end
-
-    if #parts == 0 then
-        return teamName
-    end
-
+    if #parts == 0 then return teamName end
     if #parts == 1 then
         local single = parts[1]
-        if #single <= 4 then
-            return single:upper()
-        end
+        if #single <= 4 then return single:upper() end
         return single:sub(1, 1):upper()
     end
-
     local compact = {}
-    for _, part in ipairs(parts) do
-        table.insert(compact, part:sub(1, 1):upper())
-    end
+    for _, part in ipairs(parts) do table.insert(compact, part:sub(1, 1):upper()) end
     return table.concat(compact)
 end
 
@@ -654,7 +354,6 @@ local function ColorToHex(color)
     local b = math.clamp(math.floor(color.B * 255 + 0.5), 0, 255)
     return string.format("#%02X%02X%02X", r, g, b)
 end
---
 
 --// fonts
 local _fontMap = {
@@ -676,25 +375,18 @@ local FontsToDownload = {
 local ESPFonts = { Loaded = {} }
 local FontsStillLoading = true
 
-
 local SKELETON_BONE_DEFS = {
-    -- Spine
     { "UpperTorso", "LowerTorso" },
-    -- Head to torso
     { "Head", "UpperTorso" },
-    -- Left arm
     { "UpperTorso", "LeftUpperArm" },
     { "LeftUpperArm", "LeftLowerArm" },
     { "LeftLowerArm", "LeftHand" },
-    -- Right arm
     { "UpperTorso", "RightUpperArm" },
     { "RightUpperArm", "RightLowerArm" },
     { "RightLowerArm", "RightHand" },
-    -- Left leg
     { "LowerTorso", "LeftUpperLeg" },
     { "LeftUpperLeg", "LeftLowerLeg" },
     { "LeftLowerLeg", "LeftFoot" },
-    -- Right leg
     { "LowerTorso", "RightUpperLeg" },
     { "RightUpperLeg", "RightLowerLeg" },
     { "RightLowerLeg", "RightFoot" },
@@ -703,8 +395,6 @@ local SKELETON_BONE_DEFS = {
 local function GetBonePosition(character, boneName)
     local part = character:FindFirstChild(boneName)
     if part then return part.Position end
-
-    -- R6 fallback (exact checks, no pattern matching to avoid false positives)
     if boneName == "Head" then
         part = character:FindFirstChild("Head")
     elseif boneName == "UpperTorso" then
@@ -745,9 +435,9 @@ local function GetBonePosition(character, boneName)
         part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightLeg")
         if part then return (part.CFrame * CFrame.new(0, -1.5, 0)).Position end
     end
-
     return part and part.Position
 end
+
 local FontLoadingCapable = writefile and isfile and getcustomasset
 local function LoadCustomFont(Name, Link)
     if not FontLoadingCapable then return end
@@ -765,9 +455,7 @@ local function LoadCustomFont(Name, Link)
     end)
     if not okConfig then return end
     local okLoad, font = pcall(Font.new, getcustomasset(fn .. ".ttf.json"), Enum.FontWeight.Regular)
-    if okLoad and font then
-        ESPFonts.Loaded[Name] = font
-    end
+    if okLoad and font then ESPFonts.Loaded[Name] = font end
 end
 
 local function AttemptLoadFonts()
@@ -782,11 +470,7 @@ local function AttemptLoadFonts()
     end
 end
 
-task.spawn(function()
-    task.wait(1)
-    AttemptLoadFonts()
-end)
---
+task.spawn(function() task.wait(1); AttemptLoadFonts() end)
 
 --// variables
 local TrackedInstances = {}
@@ -802,44 +486,48 @@ local function GetInstanceFromPath(path)
             current = Players
         else
             local found = current:FindFirstChild(partName)
-            if found then
-                current = found
-            else
-                return nil
-            end
+            if found then current = found else return nil end
         end
     end
     return current ~= game and current or nil
 end
 
-local function CreateLine(parent)
+-- [TEAMCHECK] helper
+local function IsTeammate(player)
+    if player == nil or player == LocalPlayer then return false end
+    local mode = ESPConfig.TeamCheckMode or "Team"
+    if (mode == "Team" or mode == "Both")
+       and LocalPlayer.Team ~= nil
+       and player.Team == LocalPlayer.Team then
+        return true
+    end
+    if mode == "Friends" or mode == "Both" then
+        local ok, isFriend = pcall(function()
+            return LocalPlayer:IsFriendsWith(player.UserId)
+        end)
+        if ok and isFriend then return true end
+    end
+    return false
+end
+
+local CreateLine = function(parent)
     local line = Instance.new("Frame")
     line.BorderSizePixel = 0
     line.BackgroundColor3 = ESPConfig.BoxColor
     line.Parent = parent
-
     local outline = Instance.new("Frame")
     outline.BorderSizePixel = 0
     outline.BackgroundColor3 = ESPConfig.Outlines.Color
     outline.ZIndex = 0
     outline.Parent = line
-
     return line, outline
 end
 
 local CreateESPObj = LPHNoVirtualize(function(name)
     local espObj = {
-        Visible = false,
-        Lines = {},
-        Outlines = {},
-        CornerLines = {},
-        CornerOutlines = {},
-
-        FlagLabels = {},
-        LastVisCheck = 0,
-        CachedModelVisible = true
+        Visible = false, Lines = {}, Outlines = {}, CornerLines = {}, CornerOutlines = {},
+        FlagLabels = {}, LastVisCheck = 0, CachedModelVisible = true
     }
-
     local container = Instance.new("Frame")
     container.BackgroundTransparency = 1
     container.Name = "ESPObj"
@@ -852,7 +540,6 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     boxFill.Visible = false
     boxFill.Parent = container
     espObj.BoxFill = boxFill
-
     local fillGradient = Instance.new("UIGradient")
     fillGradient.Parent = boxFill
     espObj.BoxFillGradient = fillGradient
@@ -862,7 +549,6 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         espObj.Lines[i] = line
         espObj.Outlines[i] = outline
     end
-
     for i = 1, 8 do
         local line, outline = CreateLine(container)
         line.Visible = false
@@ -875,15 +561,12 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         label.BackgroundTransparency = 1
         label.Size = UDim2.new(0, 100, 0, ESPConfig.TextSize)
         label.Font = _fontMap[ESPConfig.Font] or Enum.Font.Code
-        if ESPFonts.Loaded[ESPConfig.Font] then
-            label.FontFace = ESPFonts.Loaded[ESPConfig.Font]
-        end
+        if ESPFonts.Loaded[ESPConfig.Font] then label.FontFace = ESPFonts.Loaded[ESPConfig.Font] end
         label.TextSize = ESPConfig.TextSize
         label.TextColor3 = ESPConfig.TextColor
         label.TextStrokeTransparency = 1
         label.ZIndex = 2
         label.Parent = container
-
         local stroke = Instance.new("UIStroke")
         stroke.Thickness = 1
         stroke.Color = ESPConfig.TextOutlineColor or ESPConfig.Outlines.Color
@@ -958,14 +641,12 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     healthText.Visible = false
     espObj.HealthText = healthText
 
-    for i = 1, 5 do -- Max 5 flags
+    for i = 1, 5 do
         local flag = Instance.new("TextLabel")
         SetupLabel(flag)
         flag.TextSize = ESPConfig.Flags.TextSize
         flag.Font = _fontMap[ESPConfig.Flags.Font] or Enum.Font.Code
-        if ESPFonts.Loaded[ESPConfig.Flags.Font] then
-            flag.FontFace = ESPFonts.Loaded[ESPConfig.Flags.Font]
-        end
+        if ESPFonts.Loaded[ESPConfig.Flags.Font] then flag.FontFace = ESPFonts.Loaded[ESPConfig.Flags.Font] end
         flag.Visible = false
         espObj.FlagLabels[i] = flag
     end
@@ -1047,8 +728,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
 end)
 
 local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, distanceStuds, instance, isCheap, nonHuman,
-                                              noStatus,
-                                              configOverride, onScreen)
+                                              noStatus, configOverride, onScreen)
     local cfgCache = {}
     local function GetCfg(path)
         local cached = cfgCache[path]
@@ -1056,7 +736,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         local keys = path:split(".")
         local current = configOverride
         local default = ESPConfig
-
         local foundOverride = true
         for _, key in ipairs(keys) do
             if type(current) == "table" and current[key] ~= nil then
@@ -1066,16 +745,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 break
             end
         end
-
-        if foundOverride then
-            cfgCache[path] = current
-            return current
-        end
-
+        if foundOverride then cfgCache[path] = current; return current end
         local currentDefault = default
-        for _, key in ipairs(keys) do
-            currentDefault = currentDefault[key]
-        end
+        for _, key in ipairs(keys) do currentDefault = currentDefault[key] end
         cfgCache[path] = currentDefault
         return currentDefault
     end
@@ -1089,15 +761,12 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     if chamsEnabled and not isDead then
         local chamType = GetCfg("Chams.Type")
         if chamType == "Highlight" and (instance:IsA("Model") or instance:IsA("BasePart")) then
-            -- Clean up MeshChams
             if espObj.MeshShell then
                 espObj.MeshShell:Destroy()
                 espObj.MeshShell = nil
                 espObj.MeshHighlight = nil
             end
-            if not espObj.Highlight then
-                espObj.Highlight = Instance.new("Highlight")
-            end
+            if not espObj.Highlight then espObj.Highlight = Instance.new("Highlight") end
             local h = espObj.Highlight
             h.Parent = ChamsContainer
             h.Adornee = instance
@@ -1108,26 +777,15 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             h.DepthMode = GetCfg("Chams.Highlight.VisibleCheck") and Enum.HighlightDepthMode.Occluded or
                 Enum.HighlightDepthMode.AlwaysOnTop
             h.Enabled = true
-
-            -- Hide adornments if they exist
             if espObj.Adornments then
                 for _, a in pairs(espObj.Adornments) do a.Visible = false end
             end
         elseif chamType == "Adornment" then
-            if espObj.Highlight then
-                espObj.Highlight:Destroy()
-                espObj.Highlight = nil
-            end
-            -- Clean up MeshChams
-            if espObj.MeshShell then
-                espObj.MeshShell:Destroy()
-                espObj.MeshShell = nil
-                espObj.MeshHighlight = nil
-            end
+            if espObj.Highlight then espObj.Highlight:Destroy(); espObj.Highlight = nil end
+            if espObj.MeshShell then espObj.MeshShell:Destroy(); espObj.MeshShell = nil; espObj.MeshHighlight = nil end
 
             local parts = instance:IsA("Model") and instance:GetChildren() or { instance }
             local idx = 0
-
             local visCheck = GetCfg("Chams.Adornment.VisibleCheck")
             local visRate = GetCfg("VisibilityCheckRate") or 0.1
             local now = _now
@@ -1143,7 +801,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 else
                     table.insert(ignore, instance)
                 end
-
                 local root = instance:IsA("Model") and
                     (instance.PrimaryPart or instance:FindFirstChild("HumanoidRootPart") or instance:FindFirstChildWhichIsA("BasePart")) or
                     instance
@@ -1167,7 +824,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                         a.Parent = ChamsContainer
                         espObj.Adornments[idx] = a
                     end
-
                     a.Adornee = p
                     a.Size = p.Size
                     a.Color3 = finalColor
@@ -1177,42 +833,21 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     a.Visible = true
                 end
             end
-            -- Hide excess adornments beyond what the current part count needs
-            for i = idx + 1, #espObj.Adornments do
-                espObj.Adornments[i].Visible = false
-            end
+            for i = idx + 1, #espObj.Adornments do espObj.Adornments[i].Visible = false end
         elseif chamType == "MeshChams" then
-            -- MeshChams only creates on actual player characters (including LocalPlayer if enabled).
-            -- Directory entries, NPCs, and objects are all rejected even if they have a Humanoid.
             local playerOwner = Players:GetPlayerFromCharacter(instance)
             if not playerOwner then
-                if espObj.MeshShell then
-                    espObj.MeshShell:Destroy()
-                    espObj.MeshShell = nil
-                    espObj.MeshHighlight = nil
-                end
+                if espObj.MeshShell then espObj.MeshShell:Destroy(); espObj.MeshShell = nil; espObj.MeshHighlight = nil end
             else
-                -- Hide unneeded cham types
-                if espObj.Highlight then
-                    espObj.Highlight:Destroy()
-                    espObj.Highlight = nil
-                end
+                if espObj.Highlight then espObj.Highlight:Destroy(); espObj.Highlight = nil end
                 if espObj.Adornments then
                     for _, a in pairs(espObj.Adornments) do a.Visible = false end
                 end
-
-                -- Build the shell model if it doesn't exist yet (or was parented away)
                 if not espObj.MeshShell or not espObj.MeshShell.Parent then
-                    if espObj.MeshShell then
-                        espObj.MeshShell:Destroy()
-                        espObj.MeshShell = nil
-                        espObj.MeshHighlight = nil
-                    end
-
+                    if espObj.MeshShell then espObj.MeshShell:Destroy(); espObj.MeshShell = nil; espObj.MeshHighlight = nil end
                     CleanupCharacterMeshChams(instance)
-
-                    local r6Parts      = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" }
-                    local r15Parts     = {
+                    local r6Parts = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" }
+                    local r15Parts = {
                         "Head", "UpperTorso", "LowerTorso",
                         "LeftUpperArm", "LeftLowerArm", "LeftHand",
                         "RightUpperArm", "RightLowerArm", "RightHand",
@@ -1220,81 +855,66 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                         "RightUpperLeg", "RightLowerLeg", "RightFoot",
                     }
                     local humanoidInst = instance:FindFirstChild("Humanoid")
-                    local isR15        = humanoidInst and (humanoidInst.RigType == Enum.HumanoidRigType.R15)
-                    local bodyParts    = isR15 and r15Parts or r6Parts
-
-                    local shellModel   = Instance.new("Model")
-                    shellModel.Name    = "ChamShells"
+                    local isR15 = humanoidInst and (humanoidInst.RigType == Enum.HumanoidRigType.R15)
+                    local bodyParts = isR15 and r15Parts or r6Parts
+                    local shellModel = Instance.new("Model")
+                    shellModel.Name = "ChamShells"
                     shellModel:SetAttribute("SensoryESP_MeshCham", true)
                     shellModel:SetAttribute("SensoryESP_RunId", CurrentRunId)
                     shellModel.Parent = instance
-
                     for _, partName in ipairs(bodyParts) do
                         local realPart = instance:FindFirstChild(partName)
                         if realPart and realPart:IsA("BasePart") then
                             local shell = Instance.new("Part")
-                            shell.Name  = "ChamShell_" .. partName
+                            shell.Name = "ChamShell_" .. partName
                             shell:SetAttribute("SensoryESP_MeshCham", true)
                             shell:SetAttribute("SensoryESP_RunId", CurrentRunId)
-                            shell.Size         = realPart.Size * 1.015
+                            shell.Size = realPart.Size * 1.015
                             shell.Transparency = 0.9999999
-                            shell.CastShadow   = false
-                            shell.CanCollide   = false
-                            shell.CanQuery     = false
-                            shell.CanTouch     = false
-                            shell.Anchored     = false
-                            shell.Massless     = true
-                            shell.CFrame       = realPart.CFrame
-                            shell.Parent       = shellModel
-
-                            local weld         = Instance.new("Weld")
-                            weld.Part0         = shell
-                            weld.Part1         = realPart
-                            weld.C0            = CFrame.new()
-                            weld.C1            = CFrame.new()
-                            weld.Parent        = shell
+                            shell.CastShadow = false
+                            shell.CanCollide = false
+                            shell.CanQuery = false
+                            shell.CanTouch = false
+                            shell.Anchored = false
+                            shell.Massless = true
+                            shell.CFrame = realPart.CFrame
+                            shell.Parent = shellModel
+                            local weld = Instance.new("Weld")
+                            weld.Part0 = shell
+                            weld.Part1 = realPart
+                            weld.C0 = CFrame.new()
+                            weld.C1 = CFrame.new()
+                            weld.Parent = shell
                         end
                     end
-
-                    -- Single Highlight covers the whole shell model, giving a mesh-like silhouette
                     local hl = Instance.new("Highlight")
-                    hl.Name  = "ChamShellHighlight"
+                    hl.Name = "ChamShellHighlight"
                     hl:SetAttribute("SensoryESP_MeshCham", true)
                     hl:SetAttribute("SensoryESP_RunId", CurrentRunId)
-                    hl.Adornee           = shellModel
-                    hl.Parent            = shellModel
-                    espObj.MeshShell     = shellModel
+                    hl.Adornee = shellModel
+                    hl.Parent = shellModel
+                    espObj.MeshShell = shellModel
                     espObj.MeshHighlight = hl
                 end
-
-                -- Update Highlight properties every frame
                 if espObj.MeshHighlight then
-                    local hl               = espObj.MeshHighlight
-                    hl.FillColor           = GetCfg("Chams.MeshChams.FillColor")
-                    hl.FillTransparency    = GetCfg("Chams.MeshChams.FillTransparency")
-                    hl.OutlineColor        = GetCfg("Chams.MeshChams.OutlineColor")
+                    local hl = espObj.MeshHighlight
+                    hl.FillColor = GetCfg("Chams.MeshChams.FillColor")
+                    hl.FillTransparency = GetCfg("Chams.MeshChams.FillTransparency")
+                    hl.OutlineColor = GetCfg("Chams.MeshChams.OutlineColor")
                     hl.OutlineTransparency = GetCfg("Chams.MeshChams.OutlineTransparency")
-                    hl.DepthMode           = GetCfg("Chams.MeshChams.VisibleCheck")
+                    hl.DepthMode = GetCfg("Chams.MeshChams.VisibleCheck")
                         and Enum.HighlightDepthMode.Occluded
                         or Enum.HighlightDepthMode.AlwaysOnTop
-                    hl.Enabled             = true
+                    hl.Enabled = true
                 end
             end
         end
     else
-        -- Chams disabled or dead, hide all
-        if espObj.Highlight then
-            espObj.Highlight:Destroy()
-            espObj.Highlight = nil
-        end
+        if espObj.Highlight then espObj.Highlight:Destroy(); espObj.Highlight = nil end
         if espObj.Adornments then
             for _, a in pairs(espObj.Adornments) do a.Visible = false end
         end
-        if espObj.MeshShell then
-            espObj.MeshShell:Destroy()
-            espObj.MeshShell = nil
-            espObj.MeshHighlight = nil
-        end
+        if espObj.MeshShell then espObj.MeshShell:Destroy(); espObj.MeshShell = nil; espObj.MeshHighlight = nil end
     end
 
     local function ApplyTextOutline(label, style, color)
@@ -1302,10 +922,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         if not stroke then return end
         if style == "None" then
             stroke.Enabled = false
-        elseif style == "Shadow" then
-            stroke.Enabled = true
-            stroke.Thickness = 1
-            stroke.Color = color or Color3.fromRGB(0, 0, 0)
         else
             stroke.Enabled = true
             stroke.Thickness = 1
@@ -1313,7 +929,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         end
     end
 
-    -- Off-screen arrows (orbit at fixed pixel radius from screen center)
+    -- Off-screen arrows
     if espObj.ArrowInner and GetCfg("OffScreenArrows.Enabled") and instance:IsA("Model") then
         local rp = instance.PrimaryPart or instance:FindFirstChild("HumanoidRootPart") or instance:FindFirstChildWhichIsA("BasePart")
         if rp then
@@ -1325,7 +941,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 local orbit = GetCfg("OffScreenArrows.OrbitRadius")
                 local nx, ny, rot
                 if GetCfg("OffScreenArrows.ArrowMode") == "Compass" then
-                    -- Compass: top-down from LocalPlayer's HumanoidRootPart
                     local playerRoot = LocalPlayer.Character and (
                         LocalPlayer.Character:FindFirstChild("HumanoidRootPart") or
                         LocalPlayer.Character:FindFirstChild("Torso") or
@@ -1337,18 +952,13 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     nx, ny = rel.X, rel.Z
                     rot = math.deg(math.atan2(rel.Z, rel.X)) + 90
                 else
-                    -- Camera: direction from camera
                     local dir = (rp.Position - Camera.CFrame.Position).Unit
                     local viewDir = Camera.CFrame:VectorToObjectSpace(dir)
                     nx, ny = viewDir.X, -viewDir.Y
                     rot = math.deg(math.atan2(-viewDir.Y, viewDir.X)) + 90
                 end
                 local d = math.sqrt(nx * nx + ny * ny)
-                if d > 0.001 then
-                    nx, ny = nx / d, ny / d
-                else
-                    nx, ny = 0, -1
-                end
+                if d > 0.001 then nx, ny = nx / d, ny / d else nx, ny = 0, -1 end
                 local ax, ay = cx + nx * orbit, cy + ny * orbit
                 local sz = GetCfg("OffScreenArrows.Size")
                 local col = GetCfg("OffScreenArrows.Color")
@@ -1373,9 +983,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 espObj.ArrowInner.Rotation = rot
                 espObj.ArrowInner.Visible = true
 
-                -- Arrow name + distance (separate sub-configs)
                 local textY = ay + sz + 4
-
                 if GetCfg("OffScreenArrows.Names.Enabled") and name and name ~= "" then
                     local nFont = GetCfg("OffScreenArrows.Names.Font")
                     local nTxtSz = GetCfg("OffScreenArrows.Names.TextSize")
@@ -1406,7 +1014,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 else
                     espObj.ArrowName.Visible = false
                 end
-
                 if GetCfg("OffScreenArrows.Distance.Enabled") then
                     local dFont = GetCfg("OffScreenArrows.Distance.Font")
                     local dTxtSz = GetCfg("OffScreenArrows.Distance.TextSize")
@@ -1471,12 +1078,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     espObj.Container.Visible = true
     espObj.Container.ZIndex = nonHuman and 1 or 10
-    if GetCfg("Names") then
-        espObj.Text.Text = name
-    end
+    if GetCfg("Names") then espObj.Text.Text = name end
 
     local textOutlineStyle = GetCfg("TextOutlineStyle")
-    -- Backward compat: if TextOutline is explicitly false, treat as None
     if GetCfg("TextOutline") == false then textOutlineStyle = "None" end
     local textOutlineColor = GetCfg("TextOutlineColor") or GetCfg("Outlines.Color")
 
@@ -1488,13 +1092,10 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local fontObj = _fontMap[fontName] or Enum.Font.Code
     local fontLoaded = ESPFonts.Loaded[fontName]
     local boxColor = GetCfg("BoxColor")
-    -- Update Label Properties
     espObj.Text.TextSize = textSize
     espObj.Text.TextColor3 = textColor
     espObj.Text.Font = fontObj
-    if fontLoaded then
-        espObj.Text.FontFace = fontLoaded
-    end
+    if fontLoaded then espObj.Text.FontFace = fontLoaded end
     ApplyTextOutline(espObj.Text, textOutlineStyle, textOutlineColor)
 
     do
@@ -1503,9 +1104,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.DistanceText.TextSize = GetCfg("Distance.TextSize") or textSize
         espObj.DistanceText.TextColor3 = GetCfg("Distance.Color")
         espObj.DistanceText.Font = distFontObj
-        if ESPFonts.Loaded[distFont] then
-            espObj.DistanceText.FontFace = ESPFonts.Loaded[distFont]
-        end
+        if ESPFonts.Loaded[distFont] then espObj.DistanceText.FontFace = ESPFonts.Loaded[distFont] end
         ApplyTextOutline(espObj.DistanceText, GetCfg("Distance.OutlineStyle") or textOutlineStyle, textOutlineColor)
     end
 
@@ -1515,9 +1114,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.WeaponText.TextSize = GetCfg("Weapon.TextSize") or textSize
         espObj.WeaponText.TextColor3 = GetCfg("Weapon.Color")
         espObj.WeaponText.Font = wepFontObj
-        if ESPFonts.Loaded[wepFont] then
-            espObj.WeaponText.FontFace = ESPFonts.Loaded[wepFont]
-        end
+        if ESPFonts.Loaded[wepFont] then espObj.WeaponText.FontFace = ESPFonts.Loaded[wepFont] end
         ApplyTextOutline(espObj.WeaponText, GetCfg("Weapon.OutlineStyle") or textOutlineStyle, textOutlineColor)
     end
 
@@ -1525,7 +1122,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local sx, sy = math.floor(size.X), math.floor(size.Y)
     local x, y = math.floor(px - sx / 2), math.floor(py - sy / 2)
 
-    -- Get Health Early for Layout Offsets
     local health, maxHealth, healthPercent = 100, 100, 1
     if humanoid then
         health = humanoid.Health
@@ -1533,7 +1129,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         healthPercent = math.clamp(health / maxHealth, 0, 1)
     end
 
-    -- Offsets for HealthBar
     local topOffset = 0
     local bottomOffset = 0
     local leftOffset = 0
@@ -1541,18 +1136,11 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     if GetCfg("HealthBar.Enabled") and instance:IsA("Model") and humanoid then
         local hpPos = GetCfg("HealthBar.Position")
         local thickness = GetCfg("HealthBar.Width") + 2 + GetCfg("HealthBar.SideGap")
-        local isRight = GetCfg("Flags.Position") == "Right"
         local textExtra = (GetCfg("HealthBar.ShowText") and health < maxHealth) and 20 or 0
-
-        if hpPos == "Top" then
-            topOffset = thickness
-        elseif hpPos == "Bottom" then
-            bottomOffset = thickness
-        elseif hpPos == "Left" then
-            leftOffset = thickness + textExtra
-        elseif hpPos == "Right" then
-            rightOffset = thickness + textExtra
-        end
+        if hpPos == "Top" then topOffset = thickness
+        elseif hpPos == "Bottom" then bottomOffset = thickness
+        elseif hpPos == "Left" then leftOffset = thickness + textExtra
+        elseif hpPos == "Right" then rightOffset = thickness + textExtra end
     end
 
     if isCheap then
@@ -1566,13 +1154,12 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         for _, l in ipairs(espObj.FlagLabels) do l.Visible = false end
 
         local distUnit = GetCfg("Distance.Unit")
-        local distVal = distanceStuds
+        local distVal
         if distUnit == "Meters" then
             distVal = math.floor(distanceStuds / GetCfg("Distance.StudsPerMeter"))
         else
             distVal = math.floor(distanceStuds)
         end
-
         espObj.Text.Text = name .. " " .. distVal .. GetCfg("Distance.Ending")
         espObj.Text.Position = UDim2.new(0, px - 50, 0, py - (textSize / 2))
         espObj.Text.Visible = GetCfg("Names")
@@ -1580,16 +1167,12 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         return
     end
 
-    -- Top
     espObj.Lines[1].Position = UDim2.new(0, x, 0, y)
     espObj.Lines[1].Size = UDim2.new(0, sx, 0, t)
-    -- Bottom
     espObj.Lines[2].Position = UDim2.new(0, x, 0, y + sy)
     espObj.Lines[2].Size = UDim2.new(0, sx + t, 0, t)
-    -- Left
     espObj.Lines[3].Position = UDim2.new(0, x, 0, y)
     espObj.Lines[3].Size = UDim2.new(0, t, 0, sy)
-    -- Right
     espObj.Lines[4].Position = UDim2.new(0, x + sx, 0, y)
     espObj.Lines[4].Size = UDim2.new(0, t, 0, sy + t)
 
@@ -1600,7 +1183,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local outlineStyle = GetCfg("Outlines.Style")
     local outlineColor = GetCfg("Outlines.Color")
     local outlineThickness = GetCfg("Outlines.Thickness")
-    -- Backward compat: if Enabled is explicitly false, treat as None
     if GetCfg("Outlines.Enabled") == false then outlineStyle = "None" end
     local outlineTransparency = 0
     local hasOutline = outlineStyle ~= "None"
@@ -1608,18 +1190,16 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     if useCornerBoxes then
         local cornerWidth = math.max(math.floor(sx * 0.25), t * 3)
         local cornerHeight = math.max(math.floor(sy * 0.25), t * 3)
-
         local cornerData = {
-            { x,                        y,                         cornerWidth, t },
-            { x,                        y,                         t,           cornerHeight },
-            { x + sx - cornerWidth + t, y,                         cornerWidth, t },
-            { x + sx,                   y,                         t,           cornerHeight },
-            { x,                        y + sy,                    cornerWidth, t },
-            { x,                        y + sy - cornerHeight + t, t,           cornerHeight },
-            { x + sx - cornerWidth + t, y + sy,                    cornerWidth, t },
-            { x + sx,                   y + sy - cornerHeight + t, t,           cornerHeight },
+            { x, y, cornerWidth, t },
+            { x, y, t, cornerHeight },
+            { x + sx - cornerWidth + t, y, cornerWidth, t },
+            { x + sx, y, t, cornerHeight },
+            { x, y + sy, cornerWidth, t },
+            { x, y + sy - cornerHeight + t, t, cornerHeight },
+            { x + sx - cornerWidth + t, y + sy, cornerWidth, t },
+            { x + sx, y + sy - cornerHeight + t, t, cornerHeight },
         }
-
         for i = 1, 8 do
             local data = cornerData[i]
             espObj.CornerLines[i].Position = UDim2.new(0, data[1], 0, data[2])
@@ -1630,7 +1210,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     for i = 1, 4 do
         espObj.Lines[i].Visible = boxesEnabled and not useCornerBoxes
         espObj.Outlines[i].Visible = boxesEnabled and hasOutline and not useCornerBoxes
-
         espObj.Outlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
         espObj.Outlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
         espObj.Outlines[i].BackgroundTransparency = outlineTransparency
@@ -1641,7 +1220,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     for i = 1, 8 do
         espObj.CornerLines[i].Visible = boxesEnabled and useCornerBoxes
         espObj.CornerOutlines[i].Visible = boxesEnabled and hasOutline and useCornerBoxes
-
         espObj.CornerOutlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
         espObj.CornerOutlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
         espObj.CornerOutlines[i].BackgroundTransparency = outlineTransparency
@@ -1649,7 +1227,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.CornerOutlines[i].BackgroundColor3 = outlineColor
     end
 
-    -- BoxFill logic
     local fill = espObj.BoxFill
     local grad = espObj.BoxFillGradient
     if GetCfg("BoxFill.Enabled") and boxesEnabled then
@@ -1657,7 +1234,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         fill.Position = UDim2.new(0, x, 0, y)
         fill.Size = UDim2.new(0, sx, 0, sy)
         fill.BackgroundTransparency = GetCfg("BoxFill.Transparency")
-
         if GetCfg("BoxFill.Gradient.Enabled") then
             grad.Enabled = true
             local bgC1 = GetCfg("BoxFill.Gradient.Color1")
@@ -1668,7 +1244,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 ColorSequenceKeypoint.new(0.5, bgC2),
                 ColorSequenceKeypoint.new(1, bgC3)
             })
-
             local rot = GetCfg("BoxFill.Gradient.Rotation")
             if GetCfg("BoxFill.Gradient.Animated") then
                 local speed = GetCfg("BoxFill.Gradient.Speed")
@@ -1692,7 +1267,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     if GetCfg("TeamIndicator.Enabled") and teamOwner and teamOwner.Team then
         local teamColor = GetCfg("TeamIndicator.UseTeamColor") and teamOwner.TeamColor.Color or
-        GetCfg("TeamIndicator.Color")
+            GetCfg("TeamIndicator.Color")
         local teamName = teamOwner.Team.Name
         local compactTeam = GetCfg("TeamIndicator.Compact") and CompactTeamName(teamName) or teamName
         local teamTag = string.format('<font color="%s">[%s]</font>', ColorToHex(teamColor), compactTeam)
@@ -1712,9 +1287,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             local ok, result = pcall(function()
                 return LocalPlayer:IsFriendsWith(teamOwner.UserId)
             end)
-            if ok and result then
-                isFriendly = true
-            end
+            if ok and result then isFriendly = true end
         end
     end
 
@@ -1729,12 +1302,8 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     local finalNameText = name
-    if #leftTags > 0 then
-        finalNameText = table.concat(leftTags, " ") .. " " .. finalNameText
-    end
-    if #rightTags > 0 then
-        finalNameText = finalNameText .. " " .. table.concat(rightTags, " ")
-    end
+    if #leftTags > 0 then finalNameText = table.concat(leftTags, " ") .. " " .. finalNameText end
+    if #rightTags > 0 then finalNameText = finalNameText .. " " .. table.concat(rightTags, " ") end
 
     if GetCfg("Names") then
         espObj.Text.Text = finalNameText
@@ -1749,9 +1318,8 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     if GetCfg("Distance.Enabled") then
         espObj.DistanceText.Visible = true
         espObj.DistanceText.Position = UDim2.new(0, px - 50, 0, currentBottomY)
-
         local distUnit = GetCfg("Distance.Unit")
-        local distVal = distanceStuds
+        local distVal
         if distUnit == "Meters" then
             distVal = math.floor(distanceStuds / GetCfg("Distance.StudsPerMeter"))
         else
@@ -1763,28 +1331,20 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.DistanceText.Visible = false
     end
 
-    -- Weapon logic
     if GetCfg("Weapon.Enabled") then
         local weaponName = nil
-
-        -- Simple 'Holding' check
         local holding = instance:FindFirstChild("Holding")
         if holding then
             if holding:IsA("ValueBase") then
-                if holding.Value then
-                    weaponName = tostring(holding.Value)
-                end
+                if holding.Value then weaponName = tostring(holding.Value) end
             else
                 weaponName = holding.Name
             end
         end
-
-        -- Fallback
         if (not weaponName or weaponName == "" or weaponName == "nil") and GetCfg("Weapon.UseToolFallback") then
             local tool = instance:FindFirstChildWhichIsA("Tool")
             if tool then weaponName = tool.Name end
         end
-
         if weaponName and weaponName ~= "" and weaponName ~= "nil" then
             espObj.WeaponText.Visible = true
             espObj.WeaponText.Text = weaponName
@@ -1796,17 +1356,13 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.WeaponText.Visible = false
     end
 
-    -- HealthBar logic
     if GetCfg("HealthBar.Enabled") and instance:IsA("Model") and humanoid then
-        -- Positioning
         local hpPos = GetCfg("HealthBar.Position")
         local isHorizontal = (hpPos == "Top" or hpPos == "Bottom")
         local hpWidth = GetCfg("HealthBar.Width")
         local hpSideGap = GetCfg("HealthBar.SideGap")
         local hpTextFollowBar = GetCfg("HealthBar.TextFollowBar")
-
         local hpOutlineStyle = GetCfg("HealthBar.Outline.Style")
-        -- Backward compat: if Enabled is explicitly false, treat as None
         if GetCfg("HealthBar.Outline.Enabled") == false then hpOutlineStyle = "None" end
         espObj.HealthBarOutline.Visible = hpOutlineStyle ~= "None"
         espObj.HealthBarOutline.BackgroundTransparency = 0
@@ -1816,50 +1372,38 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         if isHorizontal then
             barWidth = math.floor((sx + 1) * healthPercent)
             espObj.HealthBarOutline.Size = UDim2.new(0, sx + 3, 0, hpWidth + 2)
-
             if hpPos == "Top" then
-                espObj.HealthBarOutline.Position = UDim2.new(0, x - 1, 0,
-                    y - o - hpSideGap - hpWidth - 1)
-            else -- Bottom
+                espObj.HealthBarOutline.Position = UDim2.new(0, x - 1, 0, y - o - hpSideGap - hpWidth - 1)
+            else
                 espObj.HealthBarOutline.Position = UDim2.new(0, x - 1, 0, y + sy + o + hpSideGap)
             end
-
             espObj.HealthBarContainer.Size = UDim2.new(0, barWidth, 0, hpWidth)
             espObj.HealthBarContainer.Position = UDim2.new(0, 1, 0, 1)
-
             espObj.HealthBar.Size = UDim2.new(0, sx + 1, 0, hpWidth)
             espObj.HealthBar.Position = UDim2.new(0, 0, 0, 0)
-        else -- Vertical
+        else
             local barHeight = math.floor((sy + 1) * healthPercent)
             espObj.HealthBarOutline.Size = UDim2.new(0, hpWidth + 2, 0, sy + 3)
-
             if hpPos == "Left" then
-                espObj.HealthBarOutline.Position = UDim2.new(0,
-                    x - o - hpSideGap - hpWidth - 1, 0, y - 1)
-            else -- Right
+                espObj.HealthBarOutline.Position = UDim2.new(0, x - o - hpSideGap - hpWidth - 1, 0, y - 1)
+            else
                 espObj.HealthBarOutline.Position = UDim2.new(0, x + sx + o + hpSideGap, 0, y - 1)
             end
-
             espObj.HealthBarContainer.Size = UDim2.new(0, hpWidth, 0, barHeight)
             espObj.HealthBarContainer.Position = UDim2.new(0, 1, 0, (sy + 1) - barHeight + 1)
-
             espObj.HealthBar.Size = UDim2.new(0, hpWidth, 0, sy + 1)
             espObj.HealthBar.Position = UDim2.new(0, 0, 0, -(sy + 1 - barHeight))
         end
 
-        -- Color & Gradient
         local gradientEnabled = GetCfg("HealthBar.Gradient.Enabled")
         local showText = GetCfg("HealthBar.ShowText")
-        if GetCfg("HealthBar.HideWhenFullHP") and health >= maxHealth then
-            showText = false
-        end
+        if GetCfg("HealthBar.HideWhenFullHP") and health >= maxHealth then showText = false end
         local followColorText = showText and GetCfg("HealthBar.FollowGradientColorText")
         local healthColor = Color3.fromHSV(healthPercent * 0.3, 1, 1)
 
         if gradientEnabled and not isHorizontal then
             espObj.HealthGradient.Rotation = 90
             espObj.HealthBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-
             if followColorText then
                 if healthPercent > 0.5 then
                     local ratio = (1 - healthPercent) * 2
@@ -1880,20 +1424,15 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             local hpFont = GetCfg("HealthBar.Font")
             local hpFontObj = _fontMap[hpFont] or Enum.Font.Code
             espObj.HealthText.Font = hpFontObj
-            if ESPFonts.Loaded[hpFont] then
-                espObj.HealthText.FontFace = ESPFonts.Loaded[hpFont]
-            end
+            if ESPFonts.Loaded[hpFont] then espObj.HealthText.FontFace = ESPFonts.Loaded[hpFont] end
             espObj.HealthText.TextColor3 = followColorText and healthColor or GetCfg("TextColor")
             ApplyTextOutline(espObj.HealthText, hpOutlineStyle, textOutlineColor)
-
             if isHorizontal then
                 barWidth = math.floor((sx + 1) * healthPercent)
                 local barLeftX = x + barWidth - 1
                 local textY = espObj.HealthBarOutline.Position.Y.Offset
-
                 espObj.HealthText.TextXAlignment = Enum.TextXAlignment.Center
                 espObj.HealthText.Size = UDim2.new(0, 0, 0, 0)
-
                 if hpTextFollowBar then
                     espObj.HealthText.Position = UDim2.new(0, barLeftX, 0, textY + (hpWidth / 2) + 1)
                 else
@@ -1903,11 +1442,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 local barHeight = math.floor((sy + 1) * healthPercent)
                 local barOutlineX = espObj.HealthBarOutline.Position.X.Offset
                 local barTopY = y + (sy + 1) - barHeight
-
                 espObj.HealthText.TextXAlignment = hpPos == "Left" and Enum.TextXAlignment.Right or
                     Enum.TextXAlignment.Left
                 espObj.HealthText.Size = UDim2.new(0, 0, 0, 0)
-
                 local textX = hpPos == "Left" and (barOutlineX - 2) or (barOutlineX + hpWidth + 4)
                 local textY = hpTextFollowBar and barTopY or y
                 espObj.HealthText.Position = UDim2.new(0, textX, 0, textY)
@@ -1920,79 +1457,68 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.HealthText.Visible = false
     end
 
-    -- Flags logic
     for _, label in ipairs(espObj.FlagLabels) do label.Visible = false end
     if GetCfg("Flags.Enabled") and instance:IsA("Model") and not noStatus and humanoid then
-            local state = humanoid:GetState()
-            local isMoving = humanoid.MoveDirection.Magnitude > 0
-            local isJumping = (state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.FallingDown or state == Enum.HumanoidStateType.Freefall)
-            local isSwimming = state == Enum.HumanoidStateType.Swimming
-            local flagOptionsMoving = GetCfg("Flags.Options.Moving")
-            local flagOptionsJumping = GetCfg("Flags.Options.Jumping")
-            local flagOptionsSwimming = GetCfg("Flags.Options.Swimming")
-            local flagOptionsIdle = GetCfg("Flags.Options.Idle")
-            local flagColorsMoving = GetCfg("Flags.Colors.Moving")
-            local flagColorsJumping = GetCfg("Flags.Colors.Jumping")
-            local flagColorsSwimming = GetCfg("Flags.Colors.Swimming")
-            local flagColorsIdle = GetCfg("Flags.Colors.Idle")
-            local flagFont = GetCfg("Flags.Font")
-            local flagTextSize = GetCfg("Flags.TextSize")
-            local flagTextGap = GetCfg("Flags.TextGap")
-            local flagGap = GetCfg("Flags.Gap") or 2
-            local flagSideGap = GetCfg("Flags.SideGap")
-            local flagPosition = GetCfg("Flags.Position")
-            local flags = {}
+        local state = humanoid:GetState()
+        local isMoving = humanoid.MoveDirection.Magnitude > 0
+        local isJumping = (state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.FallingDown or state == Enum.HumanoidStateType.Freefall)
+        local isSwimming = state == Enum.HumanoidStateType.Swimming
+        local flagOptionsMoving = GetCfg("Flags.Options.Moving")
+        local flagOptionsJumping = GetCfg("Flags.Options.Jumping")
+        local flagOptionsSwimming = GetCfg("Flags.Options.Swimming")
+        local flagOptionsIdle = GetCfg("Flags.Options.Idle")
+        local flagColorsMoving = GetCfg("Flags.Colors.Moving")
+        local flagColorsJumping = GetCfg("Flags.Colors.Jumping")
+        local flagColorsSwimming = GetCfg("Flags.Colors.Swimming")
+        local flagColorsIdle = GetCfg("Flags.Colors.Idle")
+        local flagFont = GetCfg("Flags.Font")
+        local flagTextSize = GetCfg("Flags.TextSize")
+        local flagTextGap = GetCfg("Flags.TextGap")
+        local flagGap = GetCfg("Flags.Gap") or 2
+        local flagSideGap = GetCfg("Flags.SideGap")
+        local flagPosition = GetCfg("Flags.Position")
+        local flags = {}
 
-            if isMoving and isJumping and flagOptionsMoving and flagOptionsJumping then
-                table.insert(flags, { text = "Moving & Jumping", color = flagColorsMoving })
-            elseif isJumping and flagOptionsJumping then
-                table.insert(flags, { text = "Jumping", color = flagColorsJumping })
-            elseif isMoving and flagOptionsMoving then
-                table.insert(flags, { text = "Moving", color = flagColorsMoving })
-            elseif isSwimming and flagOptionsSwimming then
-                table.insert(flags, { text = "Swimming", color = flagColorsSwimming })
-            elseif flagOptionsIdle then
-                table.insert(flags, { text = "Idle", color = flagColorsIdle })
+        if isMoving and isJumping and flagOptionsMoving and flagOptionsJumping then
+            table.insert(flags, { text = "Moving & Jumping", color = flagColorsMoving })
+        elseif isJumping and flagOptionsJumping then
+            table.insert(flags, { text = "Jumping", color = flagColorsJumping })
+        elseif isMoving and flagOptionsMoving then
+            table.insert(flags, { text = "Moving", color = flagColorsMoving })
+        elseif isSwimming and flagOptionsSwimming then
+            table.insert(flags, { text = "Swimming", color = flagColorsSwimming })
+        elseif flagOptionsIdle then
+            table.insert(flags, { text = "Idle", color = flagColorsIdle })
+        end
+
+        local isRight = flagPosition == "Right"
+        local fx = isRight and (x + sx + flagSideGap + rightOffset) or (x - 100 - flagSideGap - leftOffset)
+        local fy = y - flagGap
+        if flagFont == "Smallest Pixel-7" then fy = fy - 3 end
+        local flagsFontObj = _fontMap[flagFont] or Enum.Font.Code
+        local flagsFontLoaded = ESPFonts.Loaded[flagFont]
+        local flagOutlineStyle = GetCfg("Flags.OutlineStyle") or textOutlineStyle
+
+        for i, data in ipairs(flags) do
+            local label = espObj.FlagLabels[i]
+            if label then
+                label.Visible = true
+                label.Text = data.text
+                label.TextColor3 = data.color
+                label.Font = flagsFontObj
+                if flagsFontLoaded then label.FontFace = flagsFontLoaded end
+                label.TextSize = flagTextSize
+                label.TextXAlignment = isRight and Enum.TextXAlignment.Left or Enum.TextXAlignment.Right
+                label.Position = UDim2.new(0, fx, 0, fy + (i - 1) * (flagTextSize + flagTextGap))
+                ApplyTextOutline(label, flagOutlineStyle, textOutlineColor)
             end
-
-            local isRight = flagPosition == "Right"
-            local fx = isRight and (x + sx + flagSideGap + rightOffset) or
-                (x - 100 - flagSideGap - leftOffset)
-            local fy = y - flagGap
-
-            if flagFont == "Smallest Pixel-7" then
-                fy = fy - 3
-            end
-
-            local flagsFontObj = _fontMap[flagFont] or Enum.Font.Code
-            local flagsFontLoaded = ESPFonts.Loaded[flagFont]
-            local flagOutlineStyle = GetCfg("Flags.OutlineStyle") or textOutlineStyle
-
-            for i, data in ipairs(flags) do
-                local label = espObj.FlagLabels[i]
-                if label then
-                    label.Visible = true
-                    label.Text = data.text
-                    label.TextColor3 = data.color
-                    label.Font = flagsFontObj
-                    if flagsFontLoaded then
-                        label.FontFace = flagsFontLoaded
-                    end
-                    label.TextSize = flagTextSize
-                    label.TextXAlignment = isRight and Enum.TextXAlignment.Left or Enum.TextXAlignment.Right
-                    label.Position = UDim2.new(0, fx, 0,
-                        fy + (i - 1) * (flagTextSize + flagTextGap))
-                    ApplyTextOutline(label, flagOutlineStyle, textOutlineColor)
-                end
         end
     end
 
-    -- Skeleton logic (Frame-based)
     if GetCfg("Skeleton.Enabled") and instance:IsA("Model") then
         local skeletonOutline = GetCfg("Skeleton.Outline")
         local skeletonColor = GetCfg("Skeleton.Color")
         local skeletonOutlineColor = GetCfg("Skeleton.OutlineColor")
-
         local bonePositions = {}
         for _, def in ipairs(SKELETON_BONE_DEFS) do
             for _, bn in ipairs(def) do
@@ -2003,18 +1529,15 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 end
             end
         end
-
         for i, def in ipairs(SKELETON_BONE_DEFS) do
             local pA = bonePositions[def[1]]
             local pB = bonePositions[def[2]]
-
             if pA and pB then
                 if skeletonOutline then
                     DrawLine(espObj.BoneOutlines[i], pA, pB, 3, skeletonOutlineColor)
                 else
                     espObj.BoneOutlines[i].Visible = false
                 end
-
                 DrawLine(espObj.Bones[i], pA, pB, 1, skeletonColor)
             else
                 espObj.Bones[i].Visible = false
@@ -2028,7 +1551,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         end
     end
 end)
---
 
 --// logic
 local Get2DBoundingBox = LPHNoVirtualize(function(instance)
@@ -2039,21 +1561,16 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
     elseif instance:IsA("BasePart") then
         rootPart = instance
     end
-
     if not rootPart then return false, nil, nil end
-
     local position, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
     if not onScreen then return false, nil, nil end
 
     if not ESPConfig.DynamicBoxes then
-        -- STATIC BOX (No Jitter)
         local humanoid = instance:IsA("Model") and instance:FindFirstChild("Humanoid")
         if humanoid then
-            -- Specialized player math for perfect stability
             local isR6 = humanoid.RigType == Enum.HumanoidRigType.R6
             local topOffset = isR6 and 2.8 or 3.0
             local bottomOffset = isR6 and 3.0 or 3.5
-
             local topPos = rootPart.Position + Vector3.new(0, topOffset, 0)
             local bottomPos = rootPart.Position - Vector3.new(0, bottomOffset, 0)
             local top2D = Camera:WorldToViewportPoint(topPos)
@@ -2061,15 +1578,12 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
             local height = math.abs(top2D.Y - bottom2D.Y)
             return true, Vector2.new(position.X, (top2D.Y + bottom2D.Y) / 2), Vector2.new(height * 0.65, height)
         end
-
-        -- Standard Static Object projection
         local cf, size
         if instance:IsA("Model") then
             cf, size = instance:GetBoundingBox()
         else
             cf, size = instance.CFrame, instance.Size
         end
-
         local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
         local corners = {
             cf * Vector3.new(size.X / 2, size.Y / 2, size.Z / 2),
@@ -2090,7 +1604,6 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
         end
         return true, Vector2.new((minX + maxX) / 2, (minY + maxY) / 2), Vector2.new(maxX - minX, maxY - minY)
     else
-        -- DYNAMIC BOX
         local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
         local parts = {}
         if instance:IsA("Model") then
@@ -2103,7 +1616,6 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
         else
             table.insert(parts, instance)
         end
-
         if #parts == 0 then return false, nil, nil end
 
         if ESPConfig.DynamicBoxesCheap then
@@ -2148,7 +1660,6 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
         return true, Vector2.new((minX + maxX) / 2, (minY + maxY) / 2), Vector2.new(maxX - minX, maxY - minY)
     end
 end)
---
 
 --// custom functions logic
 local function CheckContains(instance, containsList)
@@ -2157,10 +1668,7 @@ local function CheckContains(instance, containsList)
     for _, containName in ipairs(containsList) do
         local found = false
         for _, child in ipairs(instance:GetChildren()) do
-            if child.Name == containName then
-                found = true
-                break
-            end
+            if child.Name == containName then found = true; break end
         end
         if not found then return false end
     end
@@ -2171,9 +1679,7 @@ local function CheckNames(instance, namesList)
     if type(namesList) ~= "table" or #namesList == 0 then return true end
     if #namesList == 1 and namesList[1] == "" then return true end
     for _, name in ipairs(namesList) do
-        if instance.Name == name then
-            return true
-        end
+        if instance.Name == name then return true end
     end
     return false
 end
@@ -2183,9 +1689,7 @@ local function CheckBlockNames(inst, blockList)
     local current = inst
     while current and current ~= game do
         for _, name in ipairs(blockList) do
-            if name ~= "" and current.Name:find(name) then
-                return true
-            end
+            if name ~= "" and current.Name:find(name) then return true end
         end
         current = current.Parent
     end
@@ -2195,22 +1699,43 @@ end
 local ScanDirectories = LPHNoVirtualize(function()
     local newTracked = {}
 
+    -- [TEAMCHECK] Players scanning with team check
     if ESPConfig.Players then
         for _, player in ipairs(Players:GetPlayers()) do
             if not ESPConfig.LocalPlayer and player == LocalPlayer then continue end
-            if ESPConfig.TeamCheck then
-                local pTeam = GetTeam(player)
-                local myTeam = GetTeam(LocalPlayer)
-                if IsPlaying(myTeam) and IsPlaying(pTeam) and myTeam == pTeam then
+
+            local character = player.Character
+            if not character then continue end
+
+            local humanoid = character:FindFirstChild("Humanoid")
+            if not (humanoid and humanoid.Health > 0) then continue end
+
+            if ESPConfig.TeamCheck and player ~= LocalPlayer and IsTeammate(player) then
+                if ESPConfig.TeamCheckHideTeammates then
+                    -- полностью пропускаем союзника
+                    continue
+                else
+                    -- показываем только имя/флаг, без боксов и чамсов
+                    newTracked[character] = {
+                        name = player.Name,
+                        Cheap = true,
+                        NoStatus = true,
+                        Config = {
+                            Names = true,
+                            Boxes = false,
+                            BoxFill = { Enabled = false },
+                            HealthBar = { Enabled = false },
+                            Chams = { Enabled = false },
+                            Skeleton = { Enabled = false },
+                            OffScreenArrows = { Enabled = false },
+                            FriendlyIndicator = { Enabled = true, CheckTeam = true },
+                        }
+                    }
                     continue
                 end
             end
-            if player.Character then
-                local humanoid = player.Character:FindFirstChild("Humanoid")
-                if humanoid and humanoid.Health > 0 then
-                    newTracked[player.Character] = { name = player.Name, Cheap = false }
-                end
-            end
+
+            newTracked[character] = { name = player.Name, Cheap = false }
         end
     end
 
@@ -2243,27 +1768,25 @@ local ScanDirectories = LPHNoVirtualize(function()
                 local children = isRecursive and inst:GetDescendants() or inst:GetChildren()
                 for _, child in ipairs(children) do
                     if (child:IsA("Model") or child:IsA("BasePart")) then
-                        -- Optimization: If we already tracked an ancestor of this object in this scan, skip it
                         local hasTrackedAncestor = false
                         local p = child.Parent
                         while p and p ~= inst and p ~= game do
-                            if newTracked[p] then
-                                hasTrackedAncestor = true
-                                break
-                            end
+                            if newTracked[p] then hasTrackedAncestor = true; break end
                             p = p.Parent
                         end
 
                         if not hasTrackedAncestor and CheckNames(child, config.Names) and CheckContains(child, config.Contains) and not CheckBlockNames(child, config.BlockNames) then
                             local humanoid = child:FindFirstChild("Humanoid")
                             if nonHuman or (not humanoid or humanoid.Health > 0) then
+                                -- [TEAMCHECK] проверка для директорий с игроками
+                                local owner = Players:GetPlayerFromCharacter(child)
+                                if ESPConfig.TeamCheck and owner and IsTeammate(owner) then
+                                    if ESPConfig.TeamCheckHideTeammates then continue end
+                                end
                                 local actualName = (displayName and displayName ~= "") and displayName or child.Name
                                 newTracked[child] = {
-                                    name = actualName,
-                                    Cheap = isCheap,
-                                    NonHuman = nonHuman,
-                                    NoStatus = noStatus,
-                                    Config = customConfig
+                                    name = actualName, Cheap = isCheap, NonHuman = nonHuman,
+                                    NoStatus = noStatus, Config = customConfig
                                 }
                             end
                         end
@@ -2273,13 +1796,14 @@ local ScanDirectories = LPHNoVirtualize(function()
                 if CheckNames(inst, config.Names) and CheckContains(inst, config.Contains) and not CheckBlockNames(inst, config.BlockNames) then
                     local humanoid = inst:FindFirstChild("Humanoid")
                     if nonHuman or (not humanoid or humanoid.Health > 0) then
+                        local owner = Players:GetPlayerFromCharacter(inst)
+                        if ESPConfig.TeamCheck and owner and IsTeammate(owner) then
+                            if ESPConfig.TeamCheckHideTeammates then continue end
+                        end
                         local actualName = (displayName and displayName ~= "") and displayName or inst.Name
                         newTracked[inst] = {
-                            name = actualName,
-                            Cheap = isCheap,
-                            NonHuman = nonHuman,
-                            NoStatus = noStatus,
-                            Config = customConfig
+                            name = actualName, Cheap = isCheap, NonHuman = nonHuman,
+                            NoStatus = noStatus, Config = customConfig
                         }
                     end
                 end
@@ -2290,12 +1814,9 @@ local ScanDirectories = LPHNoVirtualize(function()
     for inst, data in pairs(newTracked) do
         if not TrackedInstances[inst] then
             TrackedInstances[inst] = {
-                espObj = CreateESPObj(data.name),
-                name = data.name,
-                Cheap = data.Cheap,
-                NonHuman = data.NonHuman,
-                NoStatus = data.NoStatus,
-                Config = data.Config
+                espObj = CreateESPObj(data.name), name = data.name,
+                Cheap = data.Cheap, NonHuman = data.NonHuman,
+                NoStatus = data.NoStatus, Config = data.Config
             }
         else
             TrackedInstances[inst].name = data.name
@@ -2324,25 +1845,21 @@ local function RuntimeStep()
                 local disabledConfig = DeepCopy(data.Config or {})
                 disabledConfig.Chams = disabledConfig.Chams or {}
                 disabledConfig.Chams.Enabled = false
-                UpdateESPObj(data.espObj, nil, nil, "", 0, inst, data.Cheap, data.NonHuman, data.NoStatus, disabledConfig,
-                    false)
+                UpdateESPObj(data.espObj, nil, nil, "", 0, inst, data.Cheap, data.NonHuman, data.NoStatus, disabledConfig, false)
             end
         end
         return
     end
 
     local now = tick()
-
     if FontsStillLoading and now - lastFontRetry > 5 then
         lastFontRetry = now
         AttemptLoadFonts()
     end
-
     if ESPConfig.LimitFPS and ESPConfig.LimitFPS > 0 then
         if now - lastRender < (1 / ESPConfig.LimitFPS) then return end
         lastRender = now
     end
-
     if now - lastScan > 1 then
         lastScan = now
         ScanDirectories()
@@ -2353,6 +1870,16 @@ local function RuntimeStep()
             data.espObj:Destroy()
             TrackedInstances[inst] = nil
             continue
+        end
+
+        -- [TEAMCHECK] рантайм-проверка на случай смены команды/дружбы
+        if ESPConfig.TeamCheck and ESPConfig.TeamCheckHideTeammates then
+            local owner = Players:GetPlayerFromCharacter(inst)
+            if owner and owner ~= LocalPlayer and IsTeammate(owner) then
+                data.espObj:Destroy()
+                TrackedInstances[inst] = nil
+                continue
+            end
         end
 
         local humanoid = not data.NonHuman and inst:FindFirstChild("Humanoid") or nil
@@ -2380,48 +1907,24 @@ end
 
 function ESP:Unload()
     for inst, data in pairs(TrackedInstances) do
-        if data.espObj then
-            data.espObj:Destroy()
-        end
+        if data.espObj then data.espObj:Destroy() end
         TrackedInstances[inst] = nil
     end
-
-    if PlayerRemovingConnection then
-        PlayerRemovingConnection:Disconnect()
-        PlayerRemovingConnection = nil
-    end
-    if InputBeganConnection then
-        InputBeganConnection:Disconnect()
-        InputBeganConnection = nil
-    end
-    if getgenv().SensoryESP_Loop then
-        getgenv().SensoryESP_Loop:Disconnect()
-        getgenv().SensoryESP_Loop = nil
-    end
-    if ScreenGui then
-        ScreenGui:Destroy()
-        ScreenGui = nil
-    end
-    if ChamsContainer then
-        ChamsContainer:Destroy()
-        ChamsContainer = nil
-    end
-    if MeshChamsFolder then
-        MeshChamsFolder:Destroy()
-        MeshChamsFolder = nil
-    end
-
+    if PlayerRemovingConnection then PlayerRemovingConnection:Disconnect(); PlayerRemovingConnection = nil end
+    if InputBeganConnection then InputBeganConnection:Disconnect(); InputBeganConnection = nil end
+    if getgenv().SensoryESP_Loop then getgenv().SensoryESP_Loop:Disconnect(); getgenv().SensoryESP_Loop = nil end
+    if ScreenGui then ScreenGui:Destroy(); ScreenGui = nil end
+    if ChamsContainer then ChamsContainer:Destroy(); ChamsContainer = nil end
+    if MeshChamsFolder then MeshChamsFolder:Destroy(); MeshChamsFolder = nil end
     CleanupMeshChams(Workspace)
     for _, player in ipairs(BootstrapPlayers:GetPlayers()) do
         CleanupCharacterMeshChams(player.Character)
     end
-
     getgenv().SensoryESP_UI = nil
 end
 
 function ESP:Load(config)
     self:Unload()
-
     ESPConfig = DeepMerge(DeepCopy(DefaultESPConfig), config or {})
     EnsureRootInstances()
     CurrentRunId = HttpService:GenerateGUID(false)
