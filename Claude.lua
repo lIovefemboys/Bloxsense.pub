@@ -3712,10 +3712,7 @@ local Library = {
                 Rotation = 0,
                 AutoRotate = Params.AutoRotate ~= false,
                 RotationSpeed = tonumber(Params.RotationSpeed) or 0.8,
-                TargetModelSize = math.max(tonumber(Params.TargetModelSize) or 5, 0.1),
                 AssetId = nil,
-                ESPDebugPrinted = false,
-                ESPFrameCount = 0,
                 ESP = {
                     Boxes = true,
                     BoxColor = Color3.fromRGB(255, 255, 255),
@@ -3836,18 +3833,6 @@ local Library = {
                 ZIndex = 10
             })
 
-            if Params.Debug then
-                Library:Create("Frame", {
-                    Name = "\\0",
-                    Parent = Items["ESPLayer"].Instance,
-                    BackgroundColor3 = Color3.fromRGB(255, 0, 0),
-                    Size = UDim2.new(0, 60, 0, 60),
-                    Position = UDim2.new(0.5, -30, 0.5, -30),
-                    BorderSizePixel = 0,
-                    ZIndex = 100
-                })
-            end
-
             Items["Box"] = Library:Create("Frame", {
                 Name = "\\0",
                 Parent = Items["ESPLayer"].Instance,
@@ -3949,7 +3934,8 @@ local Library = {
 
             local function ApplyCamera()
                 local Camera = Items["Camera"].Instance
-                Camera.CFrame = CFrame.lookAt(Vector3.new(0, 0, Preview.Zoom), Vector3.zero)
+                local TargetY = Preview.CameraTargetY or 2.5
+                Camera.CFrame = CFrame.lookAt(Vector3.new(0, TargetY, Preview.Zoom), Vector3.new(0, TargetY, 0))
             end
 
             local function SetArchivable(Model, Archivable)
@@ -4001,6 +3987,7 @@ local Library = {
                     Preview.Highlight:Destroy()
                     Preview.Highlight = nil
                 end
+                local Model = Preview.CharacterModel
                 if Preview.ESP.Chams and Model and Model.Parent then
                     local Highlight = Instance.new("Highlight")
                     Highlight.FillColor = Preview.ESP.ChamsFillColor
@@ -4027,11 +4014,7 @@ local Library = {
             end
 
             local function UpdateESP()
-                Preview.ESPFrameCount = (Preview.ESPFrameCount or 0) + 1
                 if not Preview.CharacterModel or not Preview.CharacterModel.Parent then
-                    if Preview.ESPFrameCount <= 5 then
-                        warn("ESPPreview: no character model yet (frame", Preview.ESPFrameCount, ")")
-                    end
                     for _, Key in {"Box", "BoxFill", "Name", "HealthBarBg", "HealthText", "Distance"} do
                         if Items[Key] then Items[Key].Instance.Visible = false end
                     end
@@ -4047,16 +4030,21 @@ local Library = {
                 local VPAbs = Viewport.AbsolutePosition
                 local VPSize = Viewport.AbsoluteSize
 
+                if VPSize.X <= 0 or VPSize.Y <= 0 then
+                    return
+                end
+
                 local function Project(Point)
                     local Relative = Camera.CFrame:PointToObjectSpace(Point)
-                    if Relative.Z <= 0 then
+                    local Depth = -Relative.Z
+                    if Depth <= 0 then
                         return 0, 0, false
                     end
                     local Fov = math.rad(Camera.FieldOfView)
                     local HalfTan = math.tan(Fov / 2)
                     local Aspect = VPSize.X / VPSize.Y
-                    local X = (Relative.X / Relative.Z) / (HalfTan * Aspect)
-                    local Y = (Relative.Y / Relative.Z) / HalfTan
+                    local X = (Relative.X / Depth) / (HalfTan * Aspect)
+                    local Y = (Relative.Y / Depth) / HalfTan
                     local Px = (X + 1) / 2 * VPSize.X
                     local Py = (1 - Y) / 2 * VPSize.Y
                     return Px, Py, true
@@ -4064,19 +4052,14 @@ local Library = {
 
                 local Center, Size, Box = GetModelCenter()
                 if not Center or not Size then
-                    warn("ESPPreview: no center/size")
+                    for _, Key in {"Box", "BoxFill", "Name", "HealthBarBg", "HealthText", "Distance"} do
+                        Items[Key].Instance.Visible = false
+                    end
+                    for _, Line in Items["SkeletonLines"] do
+                        Line.Instance.Visible = false
+                    end
                     return
                 end
-                if Preview.ESPFrameCount <= 5 then
-                    warn("ESPPreview: Center=", Center, "Size=", Size)
-                    warn("ESPPreview: Camera CFrame=", Camera.CFrame, "ViewportSize=", Viewport.AbsoluteSize)
-                    warn("ESPPreview: Viewport.CurrentCamera==Camera?", Viewport.CurrentCamera == Camera)
-                    warn("ESPPreview: Camera.ViewportSize=", Camera.ViewportSize)
-                    warn("ESPPreview: Viewport.AbsolutePosition=", VPAbs)
-                    local cx, cy, cvis = Project(Center)
-                    warn("ESPPreview: Center projected=", cx, cy, cvis)
-                end
-
                 -- 8 corners of bounding box
                 local cf = Box
                 local sx, sy, sz = Size.X / 2, Size.Y / 2, Size.Z / 2
@@ -4092,26 +4075,30 @@ local Library = {
                 }
 
                 local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
-                local allVisible = true
+                local visibleCorners = 0
                 for _, Corner in corners do
                     local x, y, visible = Project(Corner)
-                    if not visible then allVisible = false end
-                    if x < minX then minX = x end
-                    if y < minY then minY = y end
-                    if x > maxX then maxX = x end
-                    if y > maxY then maxY = y end
+                    if visible then
+                        visibleCorners += 1
+                        minX = math.min(minX, x)
+                        minY = math.min(minY, y)
+                        maxX = math.max(maxX, x)
+                        maxY = math.max(maxY, y)
+                    end
                 end
 
-                if not allVisible then
-                    -- still draw if partially
+                if visibleCorners == 0 then
+                    for _, Key in {"Box", "BoxFill", "Name", "HealthBarBg", "HealthText", "Distance"} do
+                        Items[Key].Instance.Visible = false
+                    end
+                    for _, Line in Items["SkeletonLines"] do
+                        Line.Instance.Visible = false
+                    end
+                    return
                 end
 
                 local boxW = math.max(maxX - minX, 1)
                 local boxH = math.max(maxY - minY, 1)
-                if Preview.ESPFrameCount <= 5 then
-                    warn("ESPPreview: model found, box", minX, minY, boxW, boxH, "ESP.Boxes=", Preview.ESP.Boxes)
-                end
-
                 -- Box
                 if ESP.Boxes then
                     Items["Box"].Instance.Visible = true
@@ -4340,32 +4327,12 @@ local Library = {
                     return false
                 end
 
-                local LargestAxis = math.max(Size.X, Size.Y, Size.Z)
-                if LargestAxis <= 0 then
-                    return false
-                end
-
-                local Scale = Preview.TargetModelSize / LargestAxis
-                if math.abs(Scale - 1) > 0.001 then
-                    local Scaled = pcall(function()
-                        Model:ScaleTo(Scale)
-                    end)
-                    if not Scaled then
-                        return false
-                    end
-                end
-
-                local BoundsSuccess, Center, ScaledSize = pcall(function()
-                    local Box, Extents = Model:GetBoundingBox()
-                    return Box, Extents
-                end)
-                if not BoundsSuccess or not ScaledSize then
-                    return false
-                end
-
                 local Pivot = Model:GetPivot()
-                Preview.BasePivot = CFrame.new(-Center.Position.X, -Center.Position.Y, -Center.Position.Z) * Pivot
-                Preview.Zoom = math.clamp(Preview.TargetModelSize / (2 * math.tan(math.rad(Items["Camera"].Instance.FieldOfView / 2))) * 1.25, 4, 14)
+                local Offset = CFrame.new(-Bounds.Position.X, Size.Y / 2 - Bounds.Position.Y, -Bounds.Position.Z)
+                Preview.BasePivot = Offset * Pivot
+                Preview.CameraTargetY = Size.Y / 2
+                local LargestAxis = math.max(Size.X, Size.Y, Size.Z)
+                Preview.Zoom = math.max(4, LargestAxis / (2 * math.tan(math.rad(Items["Camera"].Instance.FieldOfView / 2))) * 1.15)
                 Preview.CharacterModel = Model
                 ApplyChams()
                 Preview:SetRotation(Preview.Rotation)
