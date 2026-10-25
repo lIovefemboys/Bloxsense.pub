@@ -1199,7 +1199,7 @@ local Library = {
                     Text = "",
                     AutoButtonColor = false,
                     Position = UDim2.new(0, 1011, 0, 100),
-                    Size = UDim2.new(0, 250, 0, 250),
+                    Size = UDim2.new(0, 250, 0, 304),
                     BorderSizePixel = 0,
                     BackgroundColor3 = Library.Theme["Inline"]
                 }):AddToTheme({BackgroundColor3 = 'Inline'})
@@ -1254,7 +1254,7 @@ local Library = {
                     BackgroundColor3 = Color3.fromRGB(255, 255, 255),
                     AutoButtonColor = false,
                     Position = UDim2.new(0, 8, 0, 8),
-                    Size = UDim2.new(0, 18, 1, -42),
+                    Size = UDim2.new(0, 18, 0, 208),
                     BorderSizePixel = 0
                 })
                 
@@ -1350,7 +1350,7 @@ local Library = {
                     Text = "",
                     AutoButtonColor = false,
                     Position = UDim2.new(0, 34, 0, 8),
-                    Size = UDim2.new(1, -42, 1, -42),
+                    Size = UDim2.new(1, -42, 0, 208),
                     BorderSizePixel = 0,
                     BackgroundColor3 = Color3.fromRGB(154, 87, 255)
                 })
@@ -1404,7 +1404,57 @@ local Library = {
                     ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
                     LineJoinMode = Enum.LineJoinMode.Miter,
                     Color = Library.Theme["Outline 2"]
-                }):AddToTheme({Color = 'Outline 2'})                
+                }):AddToTheme({Color = 'Outline 2'})
+
+                Items["RGBInput"] = Library:Create("TextBox", {
+                    Name = "RGBInput",
+                    FontFace = Library.Font,
+                    TextSize = Library.FontSize,
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    ClearTextOnFocus = false,
+                    Text = "",
+                    PlaceholderText = "RGB  255, 255, 255",
+                    PlaceholderColor3 = Library.Theme["Inactive Text"],
+                    TextColor3 = Library.Theme["Text"],
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 8, 0, 222),
+                    Size = UDim2.new(1, -16, 0, 20),
+                    BackgroundColor3 = Library.Theme["Element"],
+                    BorderSizePixel = 0
+                }):AddToTheme({BackgroundColor3 = 'Element', TextColor3 = 'Text', PlaceholderColor3 = 'Inactive Text'})
+
+                Library:Create("UIStroke", {
+                    Name = "\0",
+                    Parent = Items["RGBInput"].Instance,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                    LineJoinMode = Enum.LineJoinMode.Miter,
+                    Color = Library.Theme["Outline"]
+                }):AddToTheme({Color = 'Outline'})
+
+                Items["HexInput"] = Library:Create("TextBox", {
+                    Name = "HexInput",
+                    FontFace = Library.Font,
+                    TextSize = Library.FontSize,
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    ClearTextOnFocus = false,
+                    Text = "",
+                    PlaceholderText = "HEX  #FFFFFF",
+                    PlaceholderColor3 = Library.Theme["Inactive Text"],
+                    TextColor3 = Library.Theme["Text"],
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 8, 0, 246),
+                    Size = UDim2.new(1, -16, 0, 20),
+                    BackgroundColor3 = Library.Theme["Element"],
+                    BorderSizePixel = 0
+                }):AddToTheme({BackgroundColor3 = 'Element', TextColor3 = 'Text', PlaceholderColor3 = 'Inactive Text'})
+
+                Library:Create("UIStroke", {
+                    Name = "\0",
+                    Parent = Items["HexInput"].Instance,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                    LineJoinMode = Enum.LineJoinMode.Miter,
+                    Color = Library.Theme["Outline"]
+                }):AddToTheme({Color = 'Outline'})
 
                 Colorpicker.Items = Items
             end
@@ -1419,6 +1469,17 @@ local Library = {
                 local Hue, Saturation, Value = Colorpicker.Hue, Colorpicker.Saturation, Colorpicker.Value
                 Colorpicker.Color = Color3.fromHSV(Hue, Saturation, Value)
                 Colorpicker.HexValue = Colorpicker.Color:ToHex()
+                local Red = math.floor(Colorpicker.Color.R * 255 + 0.5)
+                local Green = math.floor(Colorpicker.Color.G * 255 + 0.5)
+                local Blue = math.floor(Colorpicker.Color.B * 255 + 0.5)
+
+                if Items["RGBInput"] then
+                    Items["RGBInput"].Instance.Text = string.format("%d, %d, %d", Red, Green, Blue)
+                end
+
+                if Items["HexInput"] then
+                    Items["HexInput"].Instance.Text = "#" .. Colorpicker.HexValue
+                end
         
                 Items["ColorpickerButton"]:Tween({BackgroundColor3 = Colorpicker.Color})
                 Items["Palette"]:Tween({BackgroundColor3 = Color3.fromHSV(Hue, 1, 1)})
@@ -1593,11 +1654,40 @@ local Library = {
                 Colorpicker:Update()
             end
 
+            local function ApplyRGBInput()
+                local Text = Items["RGBInput"].Instance.Text
+                local Red, Green, Blue = Text:match("^%s*(%d+)%s*,%s*(%d+)%s*,%s*(%d+)%s*$")
+                Red, Green, Blue = tonumber(Red), tonumber(Green), tonumber(Blue)
+
+                if not Red or not Green or not Blue or Red > 255 or Green > 255 or Blue > 255 then
+                    Colorpicker:Update()
+                    return
+                end
+
+                Colorpicker:Set(Color3.fromRGB(Red, Green, Blue), Colorpicker.Alpha)
+            end
+
+            local function ApplyHexInput()
+                local Hex = Items["HexInput"].Instance.Text:gsub("^%s*#", ""):gsub("%s*$", "")
+
+                if #Hex ~= 6 or not Hex:match("^%x%x%x%x%x%x$") then
+                    Colorpicker:Update()
+                    return
+                end
+
+                Colorpicker:Set(Color3.fromHex(Hex), Colorpicker.Alpha)
+            end
+
+            Items["RGBInput"]:Connect("FocusLost", ApplyRGBInput)
+            Items["HexInput"]:Connect("FocusLost", ApplyHexInput)
+
             Items["ColorpickerButton"]:Connect("MouseButton1Down", function()
+
                 Colorpicker:SetOpen(not Colorpicker.IsOpen)
             end)
-    
+
             Items["Palette"]:Connect("InputBegan", function(Input)
+
                 if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                     SlidingPalette = true 
     
