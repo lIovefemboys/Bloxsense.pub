@@ -3710,6 +3710,46 @@ local Library = {
                 RotationSpeed = tonumber(Params.RotationSpeed) or 0.8,
                 TargetModelSize = math.max(tonumber(Params.TargetModelSize) or 5, 0.1),
                 AssetId = nil,
+                ESP = {
+                    Boxes = true,
+                    BoxColor = Color3.fromRGB(255, 255, 255),
+                    BoxThickness = 1,
+                    BoxOutline = true,
+                    BoxOutlineColor = Color3.fromRGB(0, 0, 0),
+                    BoxOutlineThickness = 1,
+                    BoxFill = false,
+                    BoxFillColor = Color3.fromRGB(255, 255, 255),
+                    BoxFillTransparency = 0.85,
+                    Names = true,
+                    NameColor = Color3.fromRGB(255, 255, 255),
+                    NameSize = 12,
+                    NameOutline = true,
+                    NameOutlineColor = Color3.fromRGB(0, 0, 0),
+                    HealthBar = true,
+                    HealthBarPosition = "Left",
+                    HealthBarWidth = 2,
+                    HealthBarShowText = true,
+                    HealthBarOutline = true,
+                    HealthBarOutlineColor = Color3.fromRGB(0, 0, 0),
+                    HealthBarGradient = true,
+                    Skeleton = false,
+                    SkeletonColor = Color3.fromRGB(255, 255, 255),
+                    SkeletonOutline = true,
+                    SkeletonOutlineColor = Color3.fromRGB(0, 0, 0),
+                    SkeletonThickness = 1,
+                    Distance = false,
+                    DistanceColor = Color3.fromRGB(255, 255, 255),
+                    DistanceSize = 12,
+                    DistanceOutline = true,
+                    DistanceOutlineColor = Color3.fromRGB(0, 0, 0),
+                    Chams = false,
+                    ChamsFillColor = Color3.fromRGB(255, 255, 255),
+                    ChamsFillTransparency = 1,
+                    ChamsOutlineColor = Color3.fromRGB(255, 255, 255),
+                    ChamsOutlineTransparency = 0,
+                },
+                ESPItems = {},
+                Highlight = nil,
                 LoadGeneration = 0,
                 Dragging = false,
                 Connections = {},
@@ -3781,6 +3821,106 @@ local Library = {
             Items["Viewport"].Instance.CurrentCamera = Items["Camera"].Instance
             table.insert(Library.PreviewFrames, Items["Viewport"].Instance)
 
+            Items["ESPLayer"] = Library:Create("Frame", {
+                Name = "\\0",
+                Parent = Items["Viewport"].Instance,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 1, 0),
+                BorderSizePixel = 0,
+                ZIndex = 10
+            })
+
+            Items["Box"] = Library:Create("Frame", {
+                Name = "\\0",
+                Parent = Items["ESPLayer"].Instance,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                BorderSizePixel = 0,
+                Visible = false
+            })
+            Library:Create("UIStroke", {
+                Name = "\\0",
+                Parent = Items["Box"].Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Color = Color3.fromRGB(255, 255, 255),
+                Thickness = 1
+            })
+
+            Items["BoxFill"] = Library:Create("Frame", {
+                Name = "\\0",
+                Parent = Items["ESPLayer"].Instance,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.85,
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                BorderSizePixel = 0,
+                Visible = false,
+                ZIndex = 0
+            })
+
+            Items["Name"] = Library:Create("TextLabel", {
+                Name = "\\0",
+                FontFace = Library.Font,
+                TextSize = 12,
+                Parent = Items["ESPLayer"].Instance,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                Text = "Player",
+                Size = UDim2.new(0, 0, 0, 14),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                BorderSizePixel = 0,
+                Visible = false
+            })
+
+            Items["HealthBarBg"] = Library:Create("Frame", {
+                Name = "\\0",
+                Parent = Items["ESPLayer"].Instance,
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                Size = UDim2.new(0, 2, 0, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                BorderSizePixel = 0,
+                Visible = false
+            })
+            Items["HealthBarFill"] = Library:Create("Frame", {
+                Name = "\\0",
+                Parent = Items["HealthBarBg"].Instance,
+                BackgroundColor3 = Color3.fromRGB(0, 255, 0),
+                Size = UDim2.new(1, 0, 1, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                BorderSizePixel = 0
+            })
+            Items["HealthText"] = Library:Create("TextLabel", {
+                Name = "\\0",
+                FontFace = Library.Font,
+                TextSize = 9,
+                Parent = Items["ESPLayer"].Instance,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                Text = "100",
+                Size = UDim2.new(0, 0, 0, 12),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                BorderSizePixel = 0,
+                Visible = false
+            })
+
+            Items["Distance"] = Library:Create("TextLabel", {
+                Name = "\\0",
+                FontFace = Library.Font,
+                TextSize = 12,
+                Parent = Items["ESPLayer"].Instance,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                Text = "0m",
+                Size = UDim2.new(0, 0, 0, 14),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                BorderSizePixel = 0,
+                Visible = false
+            })
+
+            Items["SkeletonLines"] = {}
+
             local function Bind(Signal, Callback)
                 local Connection = Library:Connect(Signal, Callback)
                 if Connection then
@@ -3824,6 +3964,314 @@ local Library = {
                 end
                 Preview.CharacterModel = nil
                 Preview.BasePivot = nil
+                if Preview.Highlight then
+                    Preview.Highlight:Destroy()
+                    Preview.Highlight = nil
+                end
+                for _, Key in {"Box", "BoxFill", "Name", "HealthBarBg", "HealthText", "Distance"} do
+                    if Items[Key] then
+                        Items[Key].Instance.Visible = false
+                    end
+                end
+                for _, Line in Items["SkeletonLines"] do
+                    Line.Instance.Visible = false
+                end
+            end
+
+            local function ApplyChams()
+                if Preview.Highlight then
+                    Preview.Highlight:Destroy()
+                    Preview.Highlight = nil
+                end
+                if Preview.ESP.Chams and Model and Model.Parent then
+                    local Highlight = Instance.new("Highlight")
+                    Highlight.FillColor = Preview.ESP.ChamsFillColor
+                    Highlight.FillTransparency = Preview.ESP.ChamsFillTransparency
+                    Highlight.OutlineColor = Preview.ESP.ChamsOutlineColor
+                    Highlight.OutlineTransparency = Preview.ESP.ChamsOutlineTransparency
+                    Highlight.Adornee = Model
+                    Highlight.Parent = Model
+                    Preview.Highlight = Highlight
+                end
+            end
+
+            local function GetModelCenter()
+                if not Preview.CharacterModel then
+                    return nil
+                end
+                local Ok, Box, Size = pcall(function()
+                    return Preview.CharacterModel:GetBoundingBox()
+                end)
+                if not Ok or not Box then
+                    return nil
+                end
+                return Box.Position, Size, Box
+            end
+
+            local function UpdateESP()
+                if not Preview.CharacterModel or not Preview.CharacterModel.Parent then
+                    for _, Key in {"Box", "BoxFill", "Name", "HealthBarBg", "HealthText", "Distance"} do
+                        if Items[Key] then Items[Key].Instance.Visible = false end
+                    end
+                    for _, Line in Items["SkeletonLines"] do
+                        Line.Instance.Visible = false
+                    end
+                    return
+                end
+
+                local ESP = Preview.ESP
+                local Camera = Items["Camera"].Instance
+                local Viewport = Items["Viewport"].Instance
+                local VPAbs = Viewport.AbsolutePosition
+                local VPSize = Viewport.AbsoluteSize
+
+                local Center, Size, Box = GetModelCenter()
+                if not Center or not Size then
+                    return
+                end
+
+                -- 8 corners of bounding box
+                local cf = Box
+                local sx, sy, sz = Size.X / 2, Size.Y / 2, Size.Z / 2
+                local corners = {
+                    cf * Vector3.new(-sx, -sy, -sz),
+                    cf * Vector3.new(sx, -sy, -sz),
+                    cf * Vector3.new(-sx, sy, -sz),
+                    cf * Vector3.new(sx, sy, -sz),
+                    cf * Vector3.new(-sx, -sy, sz),
+                    cf * Vector3.new(sx, -sy, sz),
+                    cf * Vector3.new(-sx, sy, sz),
+                    cf * Vector3.new(sx, sy, sz),
+                }
+
+                local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
+                local allVisible = true
+                for _, Corner in corners do
+                    local sp, visible = Camera:WorldToViewportPoint(Corner)
+                    if not visible then allVisible = false end
+                    local x = sp.X - VPAbs.X
+                    local y = sp.Y - VPAbs.Y
+                    if x < minX then minX = x end
+                    if y < minY then minY = y end
+                    if x > maxX then maxX = x end
+                    if y > maxY then maxY = y end
+                end
+
+                if not allVisible then
+                    -- still draw if partially
+                end
+
+                local boxW = math.max(maxX - minX, 1)
+                local boxH = math.max(maxY - minY, 1)
+
+                -- Box
+                if ESP.Boxes then
+                    Items["Box"].Instance.Visible = true
+                    Items["Box"].Instance.Position = UDim2.fromOffset(minX, minY)
+                    Items["Box"].Instance.Size = UDim2.fromOffset(boxW, boxH)
+                    local stroke = Items["Box"].Instance:FindFirstChildOfClass("UIStroke")
+                    if stroke then
+                        stroke.Color = ESP.BoxColor
+                        stroke.Thickness = ESP.BoxThickness
+                        stroke.Enabled = ESP.BoxOutline ~= false
+                    end
+                else
+                    Items["Box"].Instance.Visible = false
+                end
+
+                -- BoxFill
+                if ESP.BoxFill then
+                    Items["BoxFill"].Instance.Visible = true
+                    Items["BoxFill"].Instance.Position = UDim2.fromOffset(minX, minY)
+                    Items["BoxFill"].Instance.Size = UDim2.fromOffset(boxW, boxH)
+                    Items["BoxFill"].Instance.BackgroundColor3 = ESP.BoxFillColor
+                    Items["BoxFill"].Instance.BackgroundTransparency = ESP.BoxFillTransparency
+                else
+                    Items["BoxFill"].Instance.Visible = false
+                end
+
+                -- Name
+                if ESP.Names then
+                    local headPos = Center + Vector3.new(0, Size.Y / 2, 0)
+                    local sp, visible = Camera:WorldToViewportPoint(headPos)
+                    local x = sp.X - VPAbs.X
+                    local y = sp.Y - VPAbs.Y
+                    Items["Name"].Instance.Visible = visible
+                    Items["Name"].Instance.Position = UDim2.fromOffset(x, y - 4)
+                    Items["Name"].Instance.AnchorPoint = Vector2.new(0.5, 1)
+                    Items["Name"].Instance.TextColor3 = ESP.NameColor
+                    Items["Name"].Instance.TextSize = ESP.NameSize
+                    Items["Name"].Instance.Text = "Player"
+                    local stroke = Items["Name"].Instance:FindFirstChildOfClass("UIStroke")
+                    if ESP.NameOutline then
+                        if not stroke then
+                            Library:Create("UIStroke", {
+                                Name = "\\0",
+                                Parent = Items["Name"].Instance,
+                                Color = ESP.NameOutlineColor or Color3.fromRGB(0,0,0),
+                                Thickness = 1
+                            })
+                        else
+                            stroke.Color = ESP.NameOutlineColor or Color3.fromRGB(0,0,0)
+                            stroke.Enabled = true
+                        end
+                    elseif stroke then
+                        stroke.Enabled = false
+                    end
+                else
+                    Items["Name"].Instance.Visible = false
+                end
+
+                -- HealthBar
+                if ESP.HealthBar then
+                    local barW = ESP.HealthBarWidth or 2
+                    local sideGap = 2
+                    local x = minX - barW - sideGap
+                    if ESP.HealthBarPosition == "Right" then
+                        x = maxX + sideGap
+                    elseif ESP.HealthBarPosition == "Top" then
+                        x = minX
+                    elseif ESP.HealthBarPosition == "Bottom" then
+                        x = minX
+                    end
+                    local barH = boxH
+                    local y = minY
+                    if ESP.HealthBarPosition == "Top" then
+                        y = minY - barW - sideGap
+                        barH = barW
+                        -- horizontal
+                    elseif ESP.HealthBarPosition == "Bottom" then
+                        y = maxY + sideGap
+                        barH = barW
+                    end
+                    Items["HealthBarBg"].Instance.Visible = true
+                    Items["HealthBarBg"].Instance.Position = UDim2.fromOffset(x, y)
+                    if ESP.HealthBarPosition == "Top" or ESP.HealthBarPosition == "Bottom" then
+                        Items["HealthBarBg"].Instance.Size = UDim2.fromOffset(boxW, barH)
+                    else
+                        Items["HealthBarBg"].Instance.Size = UDim2.fromOffset(barW, barH)
+                    end
+                    -- fill
+                    local health = 1
+                    if ESP.HealthBarPosition == "Top" or ESP.HealthBarPosition == "Bottom" then
+                        Items["HealthBarFill"].Instance.Size = UDim2.new(health, 0, 1, 0)
+                    else
+                        Items["HealthBarFill"].Instance.Size = UDim2.new(1, 0, health, 0)
+                        Items["HealthBarFill"].Instance.Position = UDim2.new(0, 0, 1 - health, 0)
+                    end
+                    if ESP.HealthBarGradient then
+                        -- color based on health
+                        local c = Color3.fromRGB(0, 255, 0)
+                        if health < 0.5 then c = Color3.fromRGB(255, 0, 0) elseif health < 0.75 then c = Color3.fromRGB(255, 255, 0) end
+                        Items["HealthBarFill"].Instance.BackgroundColor3 = c
+                    end
+                    if ESP.HealthBarShowText then
+                        Items["HealthText"].Instance.Visible = true
+                        Items["HealthText"].Instance.Text = "100"
+                        Items["HealthText"].Instance.Position = UDim2.fromOffset(x, y - 12)
+                        Items["HealthText"].Instance.TextColor3 = Color3.fromRGB(255,255,255)
+                    else
+                        Items["HealthText"].Instance.Visible = false
+                    end
+                else
+                    Items["HealthBarBg"].Instance.Visible = false
+                    Items["HealthText"].Instance.Visible = false
+                end
+
+                -- Distance
+                if ESP.Distance then
+                    local dist = (Camera.CFrame.Position - Center).Magnitude
+                    local meters = dist / (ESP.StudsPerMeter or 3)
+                    Items["Distance"].Instance.Visible = true
+                    Items["Distance"].Instance.Text = string.format("%.0f m", meters)
+                    Items["Distance"].Instance.TextColor3 = ESP.DistanceColor
+                    Items["Distance"].Instance.TextSize = ESP.DistanceSize
+                    Items["Distance"].Instance.Position = UDim2.fromOffset((minX + maxX) / 2, maxY + 2)
+                    Items["Distance"].Instance.AnchorPoint = Vector2.new(0.5, 0)
+                    local stroke = Items["Distance"].Instance:FindFirstChildOfClass("UIStroke")
+                    if ESP.DistanceOutline then
+                        if not stroke then
+                            Library:Create("UIStroke", {
+                                Name = "\\0",
+                                Parent = Items["Distance"].Instance,
+                                Color = ESP.DistanceOutlineColor or Color3.fromRGB(0,0,0),
+                                Thickness = 1
+                            })
+                        else
+                            stroke.Enabled = true
+                        end
+                    elseif stroke then
+                        stroke.Enabled = false
+                    end
+                else
+                    Items["Distance"].Instance.Visible = false
+                end
+
+                -- Skeleton
+                if ESP.Skeleton then
+                    -- collect Motor6D joints
+                    local joints = {}
+                    for _, Obj in Preview.CharacterModel:GetDescendants() do
+                        if Obj:IsA("Motor6D") and Obj.Part0 and Obj.Part1 then
+                            table.insert(joints, Obj)
+                        end
+                    end
+                    -- ensure pool size
+                    while #Items["SkeletonLines"] < #joints do
+                        local line = Library:Create("Frame", {
+                            Name = "\\0",
+                            Parent = Items["ESPLayer"].Instance,
+                            AnchorPoint = Vector2.new(0, 0.5),
+                            BackgroundColor3 = ESP.SkeletonColor,
+                            Size = UDim2.new(0, 0, 0, ESP.SkeletonThickness or 1),
+                            Position = UDim2.new(0, 0, 0, 0),
+                            BorderSizePixel = 0,
+                            Visible = false
+                        })
+                        if ESP.SkeletonOutline then
+                            Library:Create("UIStroke", {
+                                Name = "\\0",
+                                Parent = line.Instance,
+                                Color = ESP.SkeletonOutlineColor or Color3.fromRGB(0,0,0),
+                                Thickness = 1
+                            })
+                        end
+                        table.insert(Items["SkeletonLines"], line)
+                    end
+                    local idx = 0
+                    for _, Joint in joints do
+                        idx += 1
+                        local p0 = Joint.Part0.Position
+                        local p1 = Joint.Part1.Position
+                        local sp0, v0 = Camera:WorldToViewportPoint(p0)
+                        local sp1, v1 = Camera:WorldToViewportPoint(p1)
+                        local x0 = sp0.X - VPAbs.X
+                        local y0 = sp0.Y - VPAbs.Y
+                        local x1 = sp1.X - VPAbs.X
+                        local y1 = sp1.Y - VPAbs.Y
+                        local line = Items["SkeletonLines"][idx]
+                        if v0 and v1 then
+                            local delta = Vector2.new(x1 - x0, y1 - y0)
+                            local length = delta.Magnitude
+                            local angle = math.deg(math.atan2(delta.Y, delta.X))
+                            line.Instance.Visible = true
+                            line.Instance.Position = UDim2.fromOffset(x0, y0)
+                            line.Instance.Size = UDim2.fromOffset(length, ESP.SkeletonThickness or 1)
+                            line.Instance.Rotation = angle
+                            line.Instance.BackgroundColor3 = ESP.SkeletonColor
+                            line.Instance.AnchorPoint = Vector2.new(0, 0.5)
+                        else
+                            line.Instance.Visible = false
+                        end
+                    end
+                    for i = idx + 1, #Items["SkeletonLines"] do
+                        Items["SkeletonLines"][i].Instance.Visible = false
+                    end
+                else
+                    for _, Line in Items["SkeletonLines"] do
+                        Line.Instance.Visible = false
+                    end
+                end
             end
 
             local function PrepareModel(Model, Name)
@@ -3877,6 +4325,7 @@ local Library = {
                 Preview.BasePivot = CFrame.new(-Center.Position.X, -Center.Position.Y, -Center.Position.Z) * Pivot
                 Preview.Zoom = math.clamp(Preview.TargetModelSize / (2 * math.tan(math.rad(Items["Camera"].Instance.FieldOfView / 2))) * 1.25, 4, 14)
                 Preview.CharacterModel = Model
+                ApplyChams()
                 Preview:SetRotation(Preview.Rotation)
                 ApplyCamera()
                 return true
@@ -4024,6 +4473,19 @@ local Library = {
                 self.AutoRotate = Enabled == true
             end
 
+            function Preview:SetESP(Params)
+                Params = Params or {}
+                for Key, Value in pairs(Params) do
+                    self.ESP[Key] = Value
+                end
+                ApplyChams()
+                return self
+            end
+
+            function Preview:GetESP()
+                return self.ESP
+            end
+
             function Preview:Destroy()
                 if self.Destroyed then
                     return
@@ -4084,6 +4546,7 @@ local Library = {
                 if Preview.AutoRotate and not Preview.Dragging and Preview.CharacterModel then
                     Preview:SetRotation(Preview.Rotation + DeltaTime * Preview.RotationSpeed)
                 end
+                UpdateESP()
             end)
 
             Bind(LocalPlayer.CharacterAdded, function(Character)
