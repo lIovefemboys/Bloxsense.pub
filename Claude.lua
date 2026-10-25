@@ -62,6 +62,8 @@ local Library = {
     ThemeMap = { },
 
     OpenFrames = { },
+    PreviewDragActive = false,
+    PreviewFrames = { },
 
     Holder = nil,
     UnusedHolder = nil,
@@ -517,6 +519,24 @@ local Library = {
         end)
     end
 
+    Library.IsPointerOverPreview = function(Self, Position)
+        Position = Position or Vector2.new(Mouse.X, Mouse.Y)
+
+        for _, Frame in Library.PreviewFrames do
+            if Frame and Frame.Parent and Frame.Visible then
+                local FramePosition = Frame.AbsolutePosition
+                local FrameSize = Frame.AbsoluteSize
+
+                if Position.X >= FramePosition.X and Position.X <= FramePosition.X + FrameSize.X
+                    and Position.Y >= FramePosition.Y and Position.Y <= FramePosition.Y + FrameSize.Y then
+                    return true
+                end
+            end
+        end
+
+        return false
+    end
+
     Library.MakeDraggable = function(Self)
         if not Self.Instance then 
             return
@@ -528,6 +548,11 @@ local Library = {
         local StartPosition 
     
         local Set = function(Input)
+            if Library.PreviewDragActive or Library:IsPointerOverPreview(Input.Position) then
+                Dragging = false
+                return
+            end
+
             local DragDelta = Input.Position - DragStart
             local NewX = StartPosition.X.Offset + DragDelta.X
             local NewY = StartPosition.Y.Offset + DragDelta.Y
@@ -544,6 +569,10 @@ local Library = {
         local InputChanged
     
         Self:Connect("InputBegan", function(Input)
+            if Library.PreviewDragActive or Library:IsPointerOverPreview(Input.Position) then
+                return
+            end
+
             if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 Dragging = true
                 DragStart = Input.Position
@@ -3657,6 +3686,8 @@ local Library = {
                 Section = Self,
                 Zoom = Params.Zoom or 9,
                 Rotation = 0,
+                AutoRotate = Params.AutoRotate ~= false,
+                RotationSpeed = tonumber(Params.RotationSpeed) or 0.8,
                 Dragging = false,
                 Connections = {},
                 Items = {}
@@ -3669,7 +3700,7 @@ local Library = {
                 Name = "\0",
                 Parent = Parent.Instance,
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 184),
+                Size = UDim2.new(1, 0, 0, Params.Height or 300),
                 BorderSizePixel = 0
             })
 
@@ -3690,7 +3721,7 @@ local Library = {
                 Name = "\0",
                 Parent = Items["Container"].Instance,
                 Position = UDim2.new(0, 0, 0, 19),
-                Size = UDim2.new(1, 0, 0, 165),
+                Size = UDim2.new(1, 0, 1, -19),
                 BackgroundColor3 = Library.Theme["Inline"],
                 BorderSizePixel = 0,
                 ClipsDescendants = true,
@@ -3725,6 +3756,7 @@ local Library = {
                 Parent = Items["Viewport"].Instance
             })
             Items["Viewport"].Instance.CurrentCamera = Items["Camera"].Instance
+            table.insert(Library.PreviewFrames, Items["Viewport"].Instance)
 
             local function Bind(Signal, Callback)
                 local Connection = Library:Connect(Signal, Callback)
@@ -3834,11 +3866,21 @@ local Library = {
                 Items["Container"].Instance.Visible = Visible
             end
 
+            function Preview:SetAutoRotate(Enabled)
+                self.AutoRotate = Enabled == true
+            end
+
             function Preview:Destroy()
                 if self.Destroyed then
                     return
                 end
                 self.Destroyed = true
+                self.Dragging = false
+                Library.PreviewDragActive = false
+                local PreviewFrameIndex = table.find(Library.PreviewFrames, Items["Viewport"].Instance)
+                if PreviewFrameIndex then
+                    table.remove(Library.PreviewFrames, PreviewFrameIndex)
+                end
 
                 for _, Connection in self.Connections do
                     Connection:Disconnect()
@@ -3853,6 +3895,7 @@ local Library = {
 
             Bind(Items["Viewport"].Instance.InputBegan, function(Input)
                 if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                    Library.PreviewDragActive = true
                     Preview.Dragging = true
                     Preview.LastDragX = Input.Position.X
                     Preview.DragInputType = Input.UserInputType
@@ -3878,6 +3921,13 @@ local Library = {
                 if Input.UserInputType == Preview.DragInputType then
                     Preview.Dragging = false
                     Preview.DragInputType = nil
+                    Library.PreviewDragActive = false
+                end
+            end)
+
+            Bind(RunService.RenderStepped, function(DeltaTime)
+                if Preview.AutoRotate and not Preview.Dragging and Preview.CharacterModel then
+                    Preview:SetRotation(Preview.Rotation + DeltaTime * Preview.RotationSpeed)
                 end
             end)
 
