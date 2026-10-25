@@ -1406,6 +1406,24 @@ local Library = {
                     Color = Library.Theme["Outline 2"]
                 }):AddToTheme({Color = 'Outline 2'})
 
+                Items["RGBOuterOutline"] = Library:Create("Frame", {
+                    Name = "\0",
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Position = UDim2.new(0, 7, 0, 221),
+                    Size = UDim2.new(1, -14, 0, 22),
+                    BackgroundColor3 = Library.Theme["Outline 2"],
+                    BorderSizePixel = 0
+                }):AddToTheme({BackgroundColor3 = 'Outline 2'})
+
+                Items["RGBInnerOutline"] = Library:Create("Frame", {
+                    Name = "\0",
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Position = UDim2.new(0, 8, 0, 222),
+                    Size = UDim2.new(1, -16, 0, 20),
+                    BackgroundColor3 = Library.Theme["Outline"],
+                    BorderSizePixel = 0
+                }):AddToTheme({BackgroundColor3 = 'Outline'})
+
                 Items["RGBInput"] = Library:Create("TextBox", {
                     Name = "RGBInput",
                     FontFace = Library.Font,
@@ -1419,8 +1437,8 @@ local Library = {
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextYAlignment = Enum.TextYAlignment.Center,
                     TextWrapped = false,
-                    Position = UDim2.new(0, 8, 0, 222),
-                    Size = UDim2.new(1, -16, 0, 20),
+                    Position = UDim2.new(0, 9, 0, 223),
+                    Size = UDim2.new(1, -18, 0, 18),
                     BackgroundColor3 = Library.Theme["Element"],
                     BorderSizePixel = 0
                 }):AddToTheme({BackgroundColor3 = 'Element', TextColor3 = 'Text', PlaceholderColor3 = 'Inactive Text'})
@@ -1442,22 +1460,23 @@ local Library = {
                     PaddingRight = UDim.new(0, 5)
                 })
 
-                Library:Create("UIStroke", {
+                Items["HexOuterOutline"] = Library:Create("Frame", {
                     Name = "\0",
-                    Parent = Items["RGBInput"].Instance,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-                    LineJoinMode = Enum.LineJoinMode.Miter,
-                    Color = Library.Theme["Outline"]
-                }):AddToTheme({Color = 'Outline'})
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Position = UDim2.new(0, 7, 0, 245),
+                    Size = UDim2.new(1, -14, 0, 22),
+                    BackgroundColor3 = Library.Theme["Outline 2"],
+                    BorderSizePixel = 0
+                }):AddToTheme({BackgroundColor3 = 'Outline 2'})
 
-                Library:Create("UIStroke", {
+                Items["HexInnerOutline"] = Library:Create("Frame", {
                     Name = "\0",
-                    Parent = Items["RGBInput"].Instance,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-                    LineJoinMode = Enum.LineJoinMode.Miter,
-                    Color = Library.Theme["Outline 2"],
-                    BorderOffset = UDim.new(0, 1)
-                }):AddToTheme({Color = 'Outline 2'})
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Position = UDim2.new(0, 8, 0, 246),
+                    Size = UDim2.new(1, -16, 0, 20),
+                    BackgroundColor3 = Library.Theme["Outline"],
+                    BorderSizePixel = 0
+                }):AddToTheme({BackgroundColor3 = 'Outline'})
 
                 Items["HexInput"] = Library:Create("TextBox", {
                     Name = "HexInput",
@@ -1472,8 +1491,8 @@ local Library = {
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextYAlignment = Enum.TextYAlignment.Center,
                     TextWrapped = false,
-                    Position = UDim2.new(0, 8, 0, 246),
-                    Size = UDim2.new(1, -16, 0, 20),
+                    Position = UDim2.new(0, 9, 0, 247),
+                    Size = UDim2.new(1, -18, 0, 18),
                     BackgroundColor3 = Library.Theme["Element"],
                     BorderSizePixel = 0
                 }):AddToTheme({BackgroundColor3 = 'Element', TextColor3 = 'Text', PlaceholderColor3 = 'Inactive Text'})
@@ -1494,23 +1513,6 @@ local Library = {
                     PaddingLeft = UDim.new(0, 5),
                     PaddingRight = UDim.new(0, 5)
                 })
-
-                Library:Create("UIStroke", {
-                    Name = "\0",
-                    Parent = Items["HexInput"].Instance,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-                    LineJoinMode = Enum.LineJoinMode.Miter,
-                    Color = Library.Theme["Outline"]
-                }):AddToTheme({Color = 'Outline'})
-
-                Library:Create("UIStroke", {
-                    Name = "\0",
-                    Parent = Items["HexInput"].Instance,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-                    LineJoinMode = Enum.LineJoinMode.Miter,
-                    Color = Library.Theme["Outline 2"],
-                    BorderOffset = UDim.new(0, 1)
-                }):AddToTheme({Color = 'Outline 2'})
 
                 Colorpicker.Items = Items
             end
