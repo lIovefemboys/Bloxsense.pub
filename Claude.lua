@@ -3708,6 +3708,7 @@ local Library = {
                 Rotation = 0,
                 AutoRotate = Params.AutoRotate ~= false,
                 RotationSpeed = tonumber(Params.RotationSpeed) or 0.8,
+                TargetModelSize = math.max(tonumber(Params.TargetModelSize) or 5, 0.1),
                 AssetId = nil,
                 LoadGeneration = 0,
                 Dragging = false,
@@ -3790,7 +3791,7 @@ local Library = {
 
             local function ApplyCamera()
                 local Camera = Items["Camera"].Instance
-                Camera.CFrame = CFrame.lookAt(Vector3.new(0, 2.8, Preview.Zoom), Vector3.new(0, 2.5, 0))
+                Camera.CFrame = CFrame.lookAt(Vector3.new(0, 0, Preview.Zoom), Vector3.zero)
             end
 
             local function SetArchivable(Model, Archivable)
@@ -3822,6 +3823,63 @@ local Library = {
                     Child:Destroy()
                 end
                 Preview.CharacterModel = nil
+                Preview.BasePivot = nil
+            end
+
+            local function PrepareModel(Model, Name)
+                for _, Object in Model:GetDescendants() do
+                    if Object:IsA("Script") or Object:IsA("LocalScript") then
+                        Object:Destroy()
+                    elseif Object:IsA("BasePart") then
+                        Object.Anchored = true
+                        Object.CanCollide = false
+                    elseif Object:IsA("Humanoid") then
+                        Object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+                        Object.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+                    end
+                end
+
+                Model.Name = Name
+                Model.Parent = Items["World"].Instance
+
+                local Success, Bounds, Size = pcall(function()
+                    local Box, Extents = Model:GetBoundingBox()
+                    return Box, Extents
+                end)
+                if not Success or not Size then
+                    return false
+                end
+
+                local LargestAxis = math.max(Size.X, Size.Y, Size.Z)
+                if LargestAxis <= 0 then
+                    return false
+                end
+
+                local Scale = Preview.TargetModelSize / LargestAxis
+                if math.abs(Scale - 1) > 0.001 then
+                    local Scaled = pcall(function()
+                        Model:ScaleTo(Scale)
+                    end)
+                    if not Scaled then
+                        return false
+                    end
+                end
+
+                local BoundsSuccess, Center, ScaledSize = pcall(function()
+                    local Box, Extents = Model:GetBoundingBox()
+                    return Box, Extents
+                end)
+                if not BoundsSuccess or not ScaledSize then
+                    return false
+                end
+
+                local Pivot = Model:GetPivot()
+                Preview.BasePivot = CFrame.new(-Center.Position.X, -Center.Position.Y, -Center.Position.Z) * Pivot
+                Preview.Zoom = math.clamp(Preview.TargetModelSize / (2 * math.tan(math.rad(Items["Camera"].Instance.FieldOfView / 2))) * 1.25, 4, 14)
+                Preview.CharacterModel = Model
+                Preview:SetRotation(Preview.Rotation)
+                ApplyCamera()
+                return true
             end
 
             function Preview:Refresh(Character)
@@ -3849,29 +3907,12 @@ local Library = {
                     return false
                 end
 
-                for _, Object in Model:GetDescendants() do
-                    if Object:IsA("Script") or Object:IsA("LocalScript") then
-                        Object:Destroy()
-                    elseif Object:IsA("BasePart") then
-                        Object.Anchored = true
-                        Object.CanCollide = false
-                    elseif Object:IsA("Humanoid") then
-                        Object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-                        Object.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
-                    end
+                if not PrepareModel(Model, "LocalPlayerPreview") then
+                    Model:Destroy()
+                    warn("ESPPreview could not normalize the local character model")
+                    return false
                 end
 
-                Model.Name = "LocalPlayerPreview"
-                Model.Parent = Items["World"].Instance
-
-                local Bounds, Size = Model:GetBoundingBox()
-                local Pivot = Model:GetPivot()
-                local Offset = CFrame.new(-Bounds.Position.X, Size.Y / 2 - Bounds.Position.Y, -Bounds.Position.Z)
-                Preview.BasePivot = Offset * Pivot
-                Preview.Zoom = math.max(Preview.Zoom, Size.Y / (2 * math.tan(math.rad(Items["Camera"].Instance.FieldOfView / 2))) * 1.1)
-                Preview.CharacterModel = Model
-                self:SetRotation(self.Rotation)
-                ApplyCamera()
                 return true
             end
 
@@ -3940,11 +3981,6 @@ local Library = {
                             Object:Destroy()
                         elseif Object:IsA("BasePart") then
                             HasPart = true
-                            Object.Anchored = true
-                            Object.CanCollide = false
-                        elseif Object:IsA("Humanoid") then
-                            Object.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-                            Object.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
                         end
                     end
 
@@ -3958,26 +3994,11 @@ local Library = {
                         return
                     end
 
-                    Model.Name = "AssetPreview_" .. tostring(AssetId)
-                    Model.Parent = Items["World"].Instance
-
-                    local SuccessBounds, Bounds, Size = pcall(function()
-                        local Box, Extents = Model:GetBoundingBox()
-                        return Box, Extents
-                    end)
-                    if not SuccessBounds or not Size then
+                    if not PrepareModel(Model, "AssetPreview_" .. tostring(AssetId)) then
                         Model:Destroy()
-                        warn("ESPPreview could not calculate bounds for asset " .. tostring(AssetId))
+                        warn("ESPPreview could not normalize model asset " .. tostring(AssetId))
                         return
                     end
-
-                    local Pivot = Model:GetPivot()
-                    local Offset = CFrame.new(-Bounds.Position.X, Size.Y / 2 - Bounds.Position.Y, -Bounds.Position.Z)
-                    Preview.BasePivot = Offset * Pivot
-                    Preview.Zoom = math.clamp(Size.Y / (2 * math.tan(math.rad(Items["Camera"].Instance.FieldOfView / 2))) * 1.1, 4, 14)
-                    Preview.CharacterModel = Model
-                    self:SetRotation(self.Rotation)
-                    ApplyCamera()
                 end)
 
                 return true
