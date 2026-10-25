@@ -1425,6 +1425,16 @@ local Library = {
                     BorderSizePixel = 0
                 }):AddToTheme({BackgroundColor3 = 'Element', TextColor3 = 'Text', PlaceholderColor3 = 'Inactive Text'})
 
+                Library:Create("UIGradient", {
+                    Name = "\0",
+                    Parent = Items["RGBInput"].Instance,
+                    Rotation = 90,
+                    Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(145, 145, 145))
+                    }
+                })
+
                 Library:Create("UIPadding", {
                     Name = "\0",
                     Parent = Items["RGBInput"].Instance,
@@ -1439,6 +1449,15 @@ local Library = {
                     LineJoinMode = Enum.LineJoinMode.Miter,
                     Color = Library.Theme["Outline"]
                 }):AddToTheme({Color = 'Outline'})
+
+                Library:Create("UIStroke", {
+                    Name = "\0",
+                    Parent = Items["RGBInput"].Instance,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                    LineJoinMode = Enum.LineJoinMode.Miter,
+                    Color = Library.Theme["Outline 2"],
+                    BorderOffset = UDim.new(0, 1)
+                }):AddToTheme({Color = 'Outline 2'})
 
                 Items["HexInput"] = Library:Create("TextBox", {
                     Name = "HexInput",
@@ -1459,6 +1478,16 @@ local Library = {
                     BorderSizePixel = 0
                 }):AddToTheme({BackgroundColor3 = 'Element', TextColor3 = 'Text', PlaceholderColor3 = 'Inactive Text'})
 
+                Library:Create("UIGradient", {
+                    Name = "\0",
+                    Parent = Items["HexInput"].Instance,
+                    Rotation = 90,
+                    Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(145, 145, 145))
+                    }
+                })
+
                 Library:Create("UIPadding", {
                     Name = "\0",
                     Parent = Items["HexInput"].Instance,
@@ -1473,6 +1502,15 @@ local Library = {
                     LineJoinMode = Enum.LineJoinMode.Miter,
                     Color = Library.Theme["Outline"]
                 }):AddToTheme({Color = 'Outline'})
+
+                Library:Create("UIStroke", {
+                    Name = "\0",
+                    Parent = Items["HexInput"].Instance,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                    LineJoinMode = Enum.LineJoinMode.Miter,
+                    Color = Library.Theme["Outline 2"],
+                    BorderOffset = UDim.new(0, 1)
+                }):AddToTheme({Color = 'Outline 2'})
 
                 Colorpicker.Items = Items
             end
